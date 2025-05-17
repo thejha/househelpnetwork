@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h4>Verify OTP</h4>
+                </div>
+                <div class="card-body">
+                    <p class="alert alert-info">
+                        An OTP has been sent to your registered mobile number. Please enter the 6-digit OTP below to verify your Aadhaar.
+                    </p>
+                    
+                    {% include "partials/flash_messages.html" %}
+                    
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        {{ form.reference_id }}
+                        
+                        <div class="form-group mb-3">
+                            {{ form.otp.label(class="form-label") }}
+                            {% if form.otp.errors %}
+                                {{ form.otp(class="form-control is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.otp.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.otp(class="form-control", placeholder="Enter 6-digit OTP") }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <a href="{{ url_for('aadhaar_verification') }}" class="btn btn-secondary ms-2">Resend OTP</a>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>OTP is valid for a limited time. Please enter it promptly.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %} 

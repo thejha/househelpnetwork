@@ -1,0 +1,123 @@
+{% extends "layout.html" %}
+
+{% block title %}Search Helpers - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Search for Helpers</h1>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mb-5">
+                <div class="card-header">
+                    <h3 class="mb-0">Search by ID or Phone</h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text mb-4">
+                        Find helpers by their Government ID (Aadhar, Voter ID, Driving License) or Phone Number to view their verified profiles.
+                    </p>
+                    
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.search_type.label(class="form-label") }}
+                            {{ form.search_type(class="form-select" + (" is-invalid" if form.search_type.errors else "")) }}
+                            {% if form.search_type.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.search_type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="search_value" class="form-label">Enter Value</label>
+                            {{ form.search_value(class="form-control" + (" is-invalid" if form.search_value.errors else ""), placeholder="Enter ID or phone number") }}
+                            {% if form.search_value.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.search_value.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <h3 class="mb-3">Can't find the helper you're looking for?</h3>
+                <p class="mb-4">Add a new helper profile to our database and help grow the community.</p>
+                <a href="{{ url_for('create_helper') }}" class="btn btn-secondary">
+                    <i class="fas fa-plus me-2"></i> Add New Helper
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search tips section -->
+    <div class="row mt-5">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h4 class="mb-0">Search Tips</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-id-card me-2 text-primary-purple"></i>
+                            For Aadhar ID, enter the 12-digit number without spaces
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-address-card me-2 text-primary-purple"></i>
+                            For Voter ID, enter the full ID exactly as shown on the card
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-id-badge me-2 text-primary-purple"></i>
+                            For Driving License, enter the complete ID including state code
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-phone me-2 text-primary-purple"></i>
+                            For phone numbers, enter 10 digits without country code or spaces
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h4 class="mb-0">What You'll See</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-history me-2 text-primary-purple"></i>
+                            Complete work history with previous employers
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-star me-2 text-primary-purple"></i>
+                            Performance reviews from past employers
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-exclamation-triangle me-2 text-primary-purple"></i>
+                            Any incident reports filed by other employers
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-file-alt me-2 text-primary-purple"></i>
+                            Verified document information and skill sets
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

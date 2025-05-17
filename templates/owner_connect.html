@@ -1,0 +1,93 @@
+{% extends "layout.html" %}
+
+{% block title %}Connect with Previous Owner - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Helper Profile
+        </a>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Connect with Previous Owner</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        This form allows you to directly contact a previous employer of this helper. Enter their email or phone number to send them a message.
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center">
+                            {% if helper.photo_url %}
+                                <img src="{{ helper.photo_url }}" alt="Helper Photo" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; background-color: var(--secondary-lavender);">
+                                    <i class="fas fa-user text-primary-purple fa-2x"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h5 class="mb-1">Helper ID: {{ helper.helper_id }}</h5>
+                                <p class="mb-0 text-muted">{{ helper.phone_number }} | {{ helper.state }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        {{ form.helper_id }}
+                        
+                        <div class="mb-3">
+                            {{ form.to_owner_contact.label(class="form-label") }}
+                            {{ form.to_owner_contact(class="form-control" + (" is-invalid" if form.to_owner_contact.errors else ""), placeholder="Enter email or phone number of previous employer") }}
+                            {% if form.to_owner_contact.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.to_owner_contact.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.message.label(class="form-label") }}
+                            {{ form.message(class="form-control" + (" is-invalid" if form.message.errors else ""), rows=5, placeholder="Write your message to the previous employer...") }}
+                            {% if form.message.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.message.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4 form-check">
+                            {{ form.stored_locally(class="form-check-input") }}
+                            {{ form.stored_locally.label(class="form-check-label") }}
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer">
+                    <h5 class="mb-2">Connect Etiquette:</h5>
+                    <ul class="mb-0">
+                        <li>Be respectful and professional in your communication</li>
+                        <li>Clearly explain why you're reaching out</li>
+                        <li>Ask specific questions about the helper's performance</li>
+                        <li>Respect the previous employer's privacy and time</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

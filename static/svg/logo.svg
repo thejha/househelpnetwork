@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="50" viewBox="0 0 200 50">
+  <style>
+    .logo-text { font-family: 'Manrope', sans-serif; font-weight: 600; }
+    .primary-purple { fill: #800080; }
+    .primary-pink { fill: #FFC0CB; }
+  </style>
+  <g>
+    <!-- House icon -->
+    <path class="primary-purple" d="M25,5 L5,20 L5,45 L20,45 L20,30 L30,30 L30,45 L45,45 L45,20 Z" />
+    <path class="primary-pink" d="M25,10 L40,22 L40,40 L35,40 L35,25 L15,25 L15,40 L10,40 L10,22 Z" />
+    
+    <!-- People icon (representing helpers) -->
+    <circle class="primary-pink" cx="25" cy="18" r="5" />
+    <path class="primary-purple" d="M20,25 L30,25 C35,25 35,30 35,35 L15,35 C15,30 15,25 20,25 Z" />
+    
+    <!-- Text -->
+    <text x="55" y="25" class="logo-text primary-purple" font-size="16">HouseHelp</text>
+    <text x="55" y="40" class="logo-text primary-pink" font-size="16">Network</text>
+    
+    <!-- Verification checkmark -->
+    <circle class="primary-purple" cx="160" cy="25" r="10" />
+    <path class="primary-white" fill="white" d="M155,25 L158,28 L165,21" stroke="white" stroke-width="2" />
+  </g>
+</svg>

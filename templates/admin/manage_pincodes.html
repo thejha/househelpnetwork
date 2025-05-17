@@ -1,0 +1,398 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Manage Pincode Mappings</h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+    
+    <!-- Search Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8 mx-auto">
+                    <form id="searchPincodeForm" class="d-flex">
+                        <input type="text" id="pincodeSearch" class="form-control me-2" placeholder="Enter pincode to search...">
+                        <button type="submit" class="btn btn-primary btn-search">
+                            <i class="fas fa-search me-1"></i> SEARCH
+                        </button>
+                    </form>
+                    <div id="searchResults" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Add New Pincode Form -->
+        <div class="col-md-4 mb-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Add New Pincode</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('manage_pincodes') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.pincode.label(class="form-label") }}
+                            {{ form.pincode(class="form-control", placeholder="e.g. 400001") }}
+                            {% if form.pincode.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.pincode.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.state.label(class="form-label") }}
+                            {{ form.state(class="form-control", placeholder="e.g. Maharashtra") }}
+                            {% if form.state.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.state.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.city.label(class="form-label") }}
+                            {{ form.city(class="form-control", placeholder="e.g. Mumbai") }}
+                            {% if form.city.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.city.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.society.label(class="form-label") }}
+                            {{ form.society(class="form-control", placeholder="e.g. Bandra West") }}
+                            {% if form.society.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.society.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Bulk Upload Form -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Bulk Upload Pincodes</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('manage_pincodes') }}" enctype="multipart/form-data">
+                        {{ bulk_form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ bulk_form.csv_file.label(class="form-label") }}
+                            {{ bulk_form.csv_file(class="form-control") }}
+                            {% if bulk_form.csv_file.errors %}
+                                <div class="text-danger">
+                                    {% for error in bulk_form.csv_file.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text text-muted mt-2">
+                                Upload a CSV file with the following columns: pincode, state, city, society.<br>
+                                <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#csvFormatModal">View sample format</a>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ bulk_form.submit(class="btn btn-success") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Existing Pincodes List -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Existing Pincode Mappings</h5>
+                    <span class="badge bg-light text-dark">Total: {{ pincodes|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if pincodes %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Pincode</th>
+                                        <th>State</th>
+                                        <th>City</th>
+                                        <th>Society/Building</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pincode in pincodes %}
+                                        <tr>
+                                            <td>{{ pincode.pincode }}</td>
+                                            <td>{{ pincode.state }}</td>
+                                            <td>{{ pincode.city }}</td>
+                                            <td>{{ pincode.society }}</td>
+                                            <td>
+                                                <form action="{{ url_for('delete_pincode', pincode_id=pincode.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this pincode?');">
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center p-4">
+                            <p class="text-muted mb-0">No pincode mappings found. Add your first one!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- CSV Format Modal -->
+<div class="modal fade" id="csvFormatModal" tabindex="-1" aria-labelledby="csvFormatModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="csvFormatModalLabel">CSV Format for Bulk Upload</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Your CSV file should follow this format:</p>
+                <pre class="bg-light p-3 rounded">pincode,state,city,society
+400001,Maharashtra,Mumbai,Fort Area
+400051,Maharashtra,Mumbai,Bandra West
+110001,Delhi,New Delhi,Connaught Place
+500001,Telangana,Hyderabad,Charminar Complex</pre>
+                
+                <div class="alert alert-info mt-3">
+                    <h6 class="alert-heading">Important Notes:</h6>
+                    <ul class="mb-0">
+                        <li>First row should contain headers</li>
+                        <li>All four columns are required</li>
+                        <li>Duplicate pincodes will be skipped</li>
+                        <li>Special characters should be avoided</li>
+                    </ul>
+                </div>
+                
+                <a href="#" class="btn btn-sm btn-primary" id="downloadSampleBtn">Download Sample CSV</a>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle sample CSV download
+        document.getElementById('downloadSampleBtn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Sample CSV content
+            const csvContent = "pincode,state,city,society\n" +
+                "400001,Maharashtra,Mumbai,Fort Area\n" +
+                "400051,Maharashtra,Mumbai,Bandra West\n" +
+                "110001,Delhi,New Delhi,Connaught Place\n" +
+                "500001,Telangana,Hyderabad,Charminar Complex";
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'pincode_sample.csv');
+            a.click();
+            window.URL.revokeObjectURL(url);
+        });
+        
+        // Handle pincode search
+        const searchForm = document.getElementById('searchPincodeForm');
+        const searchInput = document.getElementById('pincodeSearch');
+        const searchResults = document.getElementById('searchResults');
+        
+        if (searchForm) {
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const searchTerm = searchInput.value.trim();
+                if (!searchTerm) {
+                    searchResults.innerHTML = '<div class="alert alert-warning">Please enter a pincode to search.</div>';
+                    return;
+                }
+                
+                // Show loading state
+                searchResults.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+                
+                // Instead of making a direct API call, search in the page
+                const searchTermLower = searchTerm.toLowerCase();
+                
+                // Find the pincode table
+                const table = document.querySelector('.table');
+                if (table) {
+                    let found = false;
+                    const rows = table.querySelectorAll('tbody tr');
+                    
+                    // Clear previous highlights
+                    rows.forEach(row => {
+                        row.classList.remove('table-success');
+                        row.style.backgroundColor = '';
+                    });
+                    
+                    // Create a data object for our results
+                    let data = { success: false, message: 'No matching pincodes found' };
+                    
+                    // Search through rows
+                    rows.forEach(row => {
+                        const pincodeCell = row.querySelector('td:first-child');
+                        if (pincodeCell && pincodeCell.textContent.trim().toLowerCase().includes(searchTermLower)) {
+                            // We found a match
+                            found = true;
+                            
+                            // Highlight the row
+                            row.classList.add('table-success');
+                            row.style.backgroundColor = '#d1e7dd';
+                            
+                            // Scroll to the row
+                            setTimeout(() => {
+                                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 100);
+                            
+                            // Get the data from this row
+                            const cells = row.querySelectorAll('td');
+                            const result = {
+                                pincode: cells[0].textContent.trim(),
+                                state: cells[1].textContent.trim(),
+                                city: cells[2].textContent.trim(),
+                                society: cells[3].textContent.trim()
+                            };
+                            
+                            // Update our data object
+                            data = { 
+                                success: true, 
+                                results: [result]
+                            };
+                            
+                            // We only need the first match
+                            return;
+                        }
+                    });
+                    
+                    // Now process the results
+                        if (data.success) {
+                            // We found matches
+                            const result = data.results[0]; // Get the first match
+                            
+                            // Highlight row in the table if it exists
+                            const table = document.querySelector('.table');
+                            if (table) {
+                                const rows = table.querySelectorAll('tbody tr');
+                                
+                                // Clear previous highlights
+                                rows.forEach(row => {
+                                    row.classList.remove('table-success');
+                                    row.style.backgroundColor = '';
+                                });
+                                
+                                // Try to find and highlight the row
+                                rows.forEach(row => {
+                                    const pincode = row.querySelector('td:first-child');
+                                    if (pincode && pincode.textContent.trim() === result.pincode) {
+                                        row.classList.add('table-success');
+                                        row.style.backgroundColor = '#d1e7dd';
+                                        setTimeout(() => {
+                                            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }, 100);
+                                    }
+                                });
+                            }
+                            
+                            // Display result
+                            searchResults.innerHTML = `
+                                <div class="alert alert-success">
+                                    <h5>Pincode found!</h5>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-3">Pincode:</dt>
+                                        <dd class="col-sm-9">${result.pincode}</dd>
+                                        
+                                        <dt class="col-sm-3">State:</dt>
+                                        <dd class="col-sm-9">${result.state}</dd>
+                                        
+                                        <dt class="col-sm-3">City:</dt>
+                                        <dd class="col-sm-9">${result.city}</dd>
+                                        
+                                        <dt class="col-sm-3">Society:</dt>
+                                        <dd class="col-sm-9">${result.society}</dd>
+                                    </dl>
+                                </div>
+                            `;
+                        } else {
+                            // No match found
+                            searchResults.innerHTML = `
+                                <div class="alert alert-danger">
+                                    No pincode found matching <strong>${searchTerm}</strong>.
+                                    <button id="addNewPincodeBtn" class="btn btn-sm btn-primary ms-2">Add New?</button>
+                                </div>
+                            `;
+                            
+                            // Add listener to "Add New" button
+                            setTimeout(() => {
+                                const addBtn = document.getElementById('addNewPincodeBtn');
+                                if (addBtn) {
+                                    addBtn.addEventListener('click', function() {
+                                        const pincodeInput = document.querySelector('input[placeholder="e.g. 400001"]');
+                                        if (pincodeInput) {
+                                            pincodeInput.value = searchTerm;
+                                            const stateInput = document.querySelector('input[placeholder="e.g. Maharashtra"]');
+                                            if (stateInput) {
+                                                stateInput.focus();
+                                            }
+                                        }
+                                    });
+                                }
+                            }, 100);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error searching for pincode:', error);
+                        searchResults.innerHTML = '<div class="alert alert-danger">Error searching for pincode. Please try again.</div>';
+                    });
+                } else {
+                    searchResults.innerHTML = '<div class="alert alert-warning">No pincode table found to search.</div>';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,49 @@
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mb-4 mb-md-0">
+                <h4>HouseHelpNetwork</h4>
+                <p>India's first platform for hiring household help with peer-verified backgrounds you can trust for your family's safety and peace of mind.</p>
+                <div class="mt-3">
+                    <a href="#" class="me-3"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="me-3"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="me-3"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="me-3"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+            
+            <div class="col-md-2 mb-4 mb-md-0">
+                <h4>Quick Links</h4>
+                <a href="{{ url_for('index') }}" class="footer-link">Home</a>
+                <a href="{{ url_for('search') }}" class="footer-link">Search</a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('profile') }}" class="footer-link">My Profile</a>
+                    <a href="{{ url_for('create_helper') }}" class="footer-link">Add Helper</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="footer-link">Login</a>
+                    <a href="{{ url_for('register') }}" class="footer-link">Register</a>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-3 mb-4 mb-md-0">
+                <h4>Services</h4>
+                <a href="#" class="footer-link">Cleaning</a>
+                <a href="#" class="footer-link">Cooking</a>
+                <a href="#" class="footer-link">Baby Sitting</a>
+                <a href="#" class="footer-link">Washing Clothes</a>
+                <a href="#" class="footer-link">Dusting</a>
+            </div>
+            
+            <div class="col-md-3">
+                <h4>Contact Us</h4>
+                <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i> 123 Main Street, Mumbai, India</p>
+                <p class="mb-1"><i class="fas fa-phone me-2"></i> +91 9876543210</p>
+                <p class="mb-1"><i class="fas fa-envelope me-2"></i> info@househelpnetwork.in</p>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2023 HouseHelpNetwork. All rights reserved.</p>
+        </div>
+    </div>
+</footer>

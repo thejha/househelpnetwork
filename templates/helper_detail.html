@@ -1,0 +1,298 @@
+{% extends "layout.html" %}
+
+{% block title %}Helper Profile - {{ helper.helper_id }} - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <a href="{{ url_for('search') }}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Search
+        </a>
+    </div>
+    
+    <div class="row">
+        <!-- Helper Profile Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Helper Profile</h3>
+                </div>
+                <div class="card-body text-center">
+                    {% if helper.photo_url %}
+                        <img src="{{ helper.photo_url }}" alt="Helper Photo" class="img-fluid rounded-circle mb-3" style="max-width: 150px; max-height: 150px;">
+                    {% else %}
+                        <div class="avatar-placeholder mb-3">
+                            <i class="fas fa-user-circle fa-6x text-primary-purple"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <h4 class="mb-3">{{ helper.name }}</h4>
+                    <p class="text-muted">ID: {{ helper.helper_id }}</p>
+                    
+                    <div class="text-center mb-4">
+                        {% if avg_ratings %}
+                            <div class="d-flex justify-content-center align-items-center">
+                                <div class="rating-display" data-rating="{{ avg_ratings.overall }}"></div>
+                            </div>
+                            <p class="text-muted mb-0">{{ reviews|length }} reviews</p>
+                        {% else %}
+                            <p class="text-muted">No reviews yet</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('create_contract', helper_id=helper.helper_id) }}" class="btn btn-primary">
+                            <i class="fas fa-file-contract me-2"></i>Create Contract
+                        </a>
+                        <a href="{{ url_for('create_review', helper_id=helper.helper_id) }}" class="btn btn-secondary">
+                            <i class="fas fa-star me-2"></i>Write Review
+                        </a>
+                        <a href="{{ url_for('report_incident', helper_id=helper.helper_id) }}" class="btn btn-light">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Report Incident
+                        </a>
+                        <a href="{{ url_for('owner_connect', helper_id=helper.helper_id) }}" class="btn btn-light">
+                            <i class="fas fa-users me-2"></i>Connect with Previous Owner
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Helper Information -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0">Basic Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted">Helper Type</h6>
+                            <p><span class="badge bg-primary">{{ helper.helper_type|capitalize }}</span></p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted">Gender</h6>
+                            <p>{{ helper.gender|capitalize }}</p>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted">{% if helper.helper_type == 'maid' %}Aadhar ID{% else %}Driving License{% endif %}</h6>
+                            <p>{{ helper.helper_id }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted">Phone Number</h6>
+                            <p>{{ helper.phone_number }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted">State</h6>
+                            <p>{{ helper.state }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted">Languages</h6>
+                            <p>
+                                {% for language in helper.languages.split(',') %}
+                                    <span class="badge bg-light text-dark me-1">{{ language.strip() }}</span>
+                                {% endfor %}
+                            </p>
+                        </div>
+                        
+                        {% if helper.has_police_verification %}
+                        <div class="col-md-12 mb-3">
+                            <h6 class="text-muted">Police Verification</h6>
+                            <p><span class="badge bg-success">Verified</span></p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if documents %}
+                        <h5 class="mt-3 mb-3">Documents</h5>
+                        <div class="row">
+                            {% for doc in documents %}
+                                <div class="col-md-6 mb-2">
+                                    <div class="border rounded p-2 d-flex align-items-center">
+                                        <i class="fas fa-file-alt text-primary-purple me-2"></i>
+                                        <span>{{ doc.type }}</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Tabs for Work History, Reviews, and Incidents -->
+            <ul class="nav nav-tabs" id="helperDetailTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="contracts-tab" data-bs-toggle="tab" data-bs-target="#contracts" type="button" role="tab" aria-controls="contracts" aria-selected="true">
+                        <i class="fas fa-history me-2"></i>Work History
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab" aria-controls="reviews" aria-selected="false">
+                        <i class="fas fa-star me-2"></i>Reviews
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="incidents-tab" data-bs-toggle="tab" data-bs-target="#incidents" type="button" role="tab" aria-controls="incidents" aria-selected="false">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Incidents
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="helperDetailTabsContent">
+                <!-- Work History Tab -->
+                <div class="tab-pane fade show active" id="contracts" role="tabpanel" aria-labelledby="contracts-tab">
+                    <div class="card border-top-0 rounded-top-0">
+                        <div class="card-body">
+                            {% if contracts %}
+                                {% for contract in contracts %}
+                                    <div class="contract-card mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <h5>Contract #{{ contract.contract_id }}</h5>
+                                            <span class="text-muted">{{ contract.start_date.strftime('%d %b, %Y') }} 
+                                                {% if contract.end_date %} 
+                                                    - {{ contract.end_date.strftime('%d %b, %Y') }}
+                                                {% else %}
+                                                    - Present
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <p><strong>Tasks:</strong> 
+                                            {% for task_id in contract.tasks.split(',') %}
+                                                <span class="badge bg-primary-purple me-1">{{ task_id }}</span>
+                                            {% endfor %}
+                                        </p>
+                                        <p><strong>Monthly Salary:</strong> ₹{{ contract.monthly_salary }}</p>
+                                    </div>
+                                    {% if not loop.last %}<hr>{% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                    <h5>No work history available</h5>
+                                    <p class="text-muted">This helper doesn't have any recorded contracts yet.</p>
+                                    <a href="{{ url_for('create_contract', helper_id=helper.helper_id) }}" class="btn btn-primary">
+                                        Create Contract
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reviews Tab -->
+                <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                    <div class="card border-top-0 rounded-top-0">
+                        <div class="card-body">
+                            {% if reviews %}
+                                <div class="mb-4">
+                                    <h5>Average Ratings</h5>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Tasks</span>
+                                                <div class="rating-display" data-rating="{{ avg_ratings.tasks_average }}"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Punctuality</span>
+                                                <div class="rating-display" data-rating="{{ avg_ratings.punctuality }}"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Attitude</span>
+                                                <div class="rating-display" data-rating="{{ avg_ratings.attitude }}"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Hygiene</span>
+                                                <div class="rating-display" data-rating="{{ avg_ratings.hygiene }}"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Communication</span>
+                                                <div class="rating-display" data-rating="{{ avg_ratings.communication }}"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Reliability</span>
+                                                <div class="rating-display" data-rating="{{ avg_ratings.reliability }}"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr>
+                                
+                                {% for review in reviews %}
+                                    <div class="review-card mb-3">
+                                        <div class="review-header">
+                                            <span class="review-author">Review by {{ review.owner.name }}</span>
+                                            <span class="review-date">{{ review.timestamp.strftime('%d %b, %Y') }}</span>
+                                        </div>
+                                        <div class="review-rating">
+                                            <div class="rating-display" data-rating="{{ (review.tasks_average + review.punctuality + review.attitude + review.hygiene + review.communication + review.reliability) / 6 }}"></div>
+                                        </div>
+                                        <div class="review-text">
+                                            <p>{{ review.comments }}</p>
+                                        </div>
+                                    </div>
+                                    {% if not loop.last %}<hr>{% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                                    <h5>No reviews available</h5>
+                                    <p class="text-muted">This helper hasn't received any reviews yet.</p>
+                                    <a href="{{ url_for('create_review', helper_id=helper.helper_id) }}" class="btn btn-primary">
+                                        Write a Review
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Incidents Tab -->
+                <div class="tab-pane fade" id="incidents" role="tabpanel" aria-labelledby="incidents-tab">
+                    <div class="card border-top-0 rounded-top-0">
+                        <div class="card-body">
+                            {% if incidents %}
+                                {% for incident in incidents %}
+                                    <div class="incident-card mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <h5>Incident Report #{{ incident.report_id }}</h5>
+                                            <span class="text-muted">Reported on {{ incident.timestamp.strftime('%d %b, %Y') }}</span>
+                                        </div>
+                                        <p><strong>Date of Incident:</strong> {{ incident.date.strftime('%d %b, %Y') }}</p>
+                                        {% if incident.fir_number %}
+                                            <p><strong>FIR Number:</strong> {{ incident.fir_number }}</p>
+                                        {% endif %}
+                                        <p><strong>Description:</strong></p>
+                                        <p>{{ incident.description }}</p>
+                                    </div>
+                                    {% if not loop.last %}<hr>{% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                    <h5>No incidents reported</h5>
+                                    <p class="text-muted">There are no incident reports for this helper.</p>
+                                    <a href="{{ url_for('report_incident', helper_id=helper.helper_id) }}" class="btn btn-light">
+                                        Report an Incident
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

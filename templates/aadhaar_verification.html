@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h4>Aadhaar Verification</h4>
+                </div>
+                <div class="card-body">
+                    <p class="alert alert-info">
+                        To verify your identity, please enter your 12-digit Aadhaar number. An OTP will be sent to your mobile number registered with Aadhaar.
+                    </p>
+                    
+                    {% include "partials/flash_messages.html" %}
+                    
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-group mb-3">
+                            {{ form.aadhaar_id.label(class="form-label") }}
+                            {% if form.aadhaar_id.errors %}
+                                {{ form.aadhaar_id(class="form-control is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.aadhaar_id.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.aadhaar_id(class="form-control", placeholder="Enter 12-digit Aadhaar number") }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>This information will be securely verified through the official Aadhaar API.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %} 

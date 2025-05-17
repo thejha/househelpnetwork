@@ -1,0 +1,131 @@
+{% extends "layout.html" %}
+
+{% block title %}Create Contract - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Helper Profile
+        </a>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Create Contract</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center">
+                            {% if helper.photo_url %}
+                                <img src="{{ helper.photo_url }}" alt="Helper Photo" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; background-color: var(--secondary-lavender);">
+                                    <i class="fas fa-user text-primary-purple fa-2x"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h5 class="mb-1">Helper ID: {{ helper.helper_id }}</h5>
+                                <p class="mb-0 text-muted">{{ helper.phone_number }} | {{ helper.state }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        {{ form.helper_id }}
+                        
+                        <div class="mb-3">
+                            {{ form.tasks.label(class="form-label") }}
+                            <select name="tasks" id="tasks" class="form-select" multiple="multiple">
+                                {% for value, label in form.tasks.choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.tasks.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.tasks.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.start_date.label(class="form-label") }}
+                                {{ form.start_date(class="form-control datepicker" + (" is-invalid" if form.start_date.errors else "")) }}
+                                {% if form.start_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.start_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.end_date.label(class="form-label") }}
+                                {{ form.end_date(class="form-control datepicker" + (" is-invalid" if form.end_date.errors else "")) }}
+                                {% if form.end_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.end_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="form-text">Leave empty for ongoing contracts</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.monthly_salary.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                {{ form.monthly_salary(class="form-control" + (" is-invalid" if form.monthly_salary.errors else "")) }}
+                            </div>
+                            {% if form.monthly_salary.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.monthly_salary.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer">
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        This contract creates a formal record of your agreement with the helper. It will be visible to other verified owners when they search for this helper's profile.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize multiselect for tasks
+        $(document).ready(function() {
+            $('#tasks').multiselect({
+                includeSelectAllOption: true,
+                nonSelectedText: 'Select Tasks',
+                buttonWidth: '100%',
+                maxHeight: 300
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,152 @@
+# Context file for "India’s first peer-verified household help" platform
+project:
+  name: househelpnetwork
+  tagline: "India’s first platform for hiring household help with peer-verified backgrounds you can trust for your family’s safety and peace of mind"
+  description: |
+    This platform addresses the lack of reliable background information on household helpers in India. The domestic help market is highly unstructured; helpers are typically hired through society guards or unverified agencies, making the process inefficient and potentially unsafe. Many helpers are migrants with no centralized registration, increasing the risk of petty crimes and trust issues.
+    Our app empowers communities to crowdsource and verify helper data—government IDs, past work history, and owner's feedback—so that any owner can perform a background search (via Aadhar, Voter ID, Driving License, or phone number) and view comprehensive profiles before hiring.
+  problem_statement: |
+    • No centralized registry or authority maintains background details for household help in India.
+    • Hiring via informal channels (society guards, unreliable agencies) leads to safety and trust risks.
+    • Owners lack visibility into helpers’ past performance, criminal records, and reliability.
+    • There is no peer-to-peer mechanism for sharing verified helper histories and reviews.
+  roles:
+    - owner
+    - admin
+  access_control: "Owners and Admins only; no helper logins"
+  authentication:
+    method: "Email/Password Signup & Login"
+    signup_fields:
+      - name: string
+      - email: string
+      - phone_number: string
+      - password: string
+
+master_data:
+  task_list:
+    - Cleaning
+    - Cooking
+    - Dusting
+    - Baby Sitting
+    - Washing Clothes
+    - [customizable by admin]
+  pincode_mapping:
+    description: "Map of pincodes → societies/buildings"
+
+entities:
+  owner_profile:
+    fields:
+      - owner_id: string       # unique user ID
+      - name: string
+      - email: string
+      - phone_number: string
+      - address:
+          pincode: string
+          state: string
+          city: string
+          society: string
+          street: string
+          apartment_number: string
+      - verification_status: string  # Pending, Verified, Rejected
+      - documents:
+          - type: string  # e.g. Aadhar, utility_bill
+            url: string
+
+  helper_profile:
+    fields:
+      - helper_id: string        # unique ID (govt ID or phone)
+      - gov_id:                # Aadhar, Voter ID, Driving License
+      - phone_number: string
+      - photo_url: string
+      - state: string
+      - languages: [string]
+      - documents:            # stored documents (IDs, contracts, certificates)
+          - type: string        # e.g. Aadhar, contract
+            url: string
+
+  contract:
+    fields:
+      - contract_id: string
+      - helper_id: string      # reference to helper_profile.helper_id
+      - tasks: [string]        # selected from master_data.task_list
+      - start_date: date
+      - end_date: date?       # optional if ongoing
+      - monthly_salary: number
+
+  review:
+    fields:
+      - review_id: string
+      - helper_id: string
+      - owner_id: string
+      - timestamp: datetime
+      - ratings:
+          tasks_average: number
+          punctuality: number
+          attitude: number
+          hygiene: number
+          communication: number
+          reliability: number
+      - comments: string
+
+  incident_report:
+    fields:
+      - report_id: string
+      - helper_id: string
+      - owner_id: string
+      - date: date
+      - description: text
+      - fir_number: string?   # optional
+      - timestamp: datetime
+
+  owner_to_owner_connect:
+    description: "Form for owners to message past owners about a helper"
+    fields:
+      - form_id: string
+      - helper_id: string      # prefilled
+      - from_owner_id: string
+      - to_owner_contact: string
+      - message: text
+      - timestamp: datetime
+      - stored_locally: boolean
+
+search:
+  lookup_fields: [gov_id, phone_number]
+  returned_data:
+    - work_history: [contract]
+    - reviews: [review]
+    - document_urls: [string]
+    - incident_reports: [incident_report]
+
+notifications: {}
+
+ui_ux:
+  branding:
+    primary_colors: ["#FFC0CB", "#800080", "#FFFFFF", "#000000"]  # pink, purple, white, black
+    secondary_colors: ["#F3F0FF", "#FFF0F6"]  # light lavender and rose
+  typography:
+    font_family: "Manrope, sans-serif"
+    headings:
+      font_weight: 600
+      sizes: ["xl", "lg", "md"]
+    body:
+      font_weight: 400
+      size: "base"
+  ui_elements:
+    buttons:
+      border_radius: "2xl"
+      shadow: "soft"
+      padding: "p-2"
+    forms:
+      input_style: "rounded, border-gray-300, focus:border-purple-500"
+    cards:
+      border_radius: "2xl"
+      shadow: "soft"
+      padding: "p-4"
+    icons:
+      style: "line-art"
+  layout:
+    grid: true
+    spacing: "consistent-margins"
+  tone:
+    voice: "friendly, trustworthy, professional"
+    language: "concise, clear, empowering"

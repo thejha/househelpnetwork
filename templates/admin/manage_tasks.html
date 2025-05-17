@@ -1,0 +1,161 @@
+{% extends "layout.html" %}
+
+{% block title %}Manage Tasks - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+        <h1 class="mb-0">Manage Tasks</h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+    
+    <div class="row">
+        <!-- Add New Task -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Add New Task</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Enter task name") }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Task Guidelines</h4>
+                </div>
+                <div class="card-body">
+                    <p>When adding tasks, consider the following:</p>
+                    <ul>
+                        <li>Use clear, concise names for tasks</li>
+                        <li>Ensure tasks are specific and measurable</li>
+                        <li>Avoid overly broad or ambiguous descriptions</li>
+                        <li>Consider common household helper responsibilities</li>
+                    </ul>
+                    
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        These tasks will be available for owners to select when creating contracts with helpers.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Existing Tasks -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Existing Tasks</h4>
+                    <span class="badge bg-primary-purple">{{ tasks|length }} Tasks</span>
+                </div>
+                <div class="card-body">
+                    {% if tasks %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th width="5%">#</th>
+                                        <th>Task Name</th>
+                                        <th width="15%">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for task in tasks %}
+                                        <tr>
+                                            <td>{{ task.id }}</td>
+                                            <td>{{ task.name }}</td>
+                                            <td>
+                                                <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}" onsubmit="return confirmDelete('task', '{{ task.name }}')">
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                            <h5>No tasks available</h5>
+                            <p class="text-muted">Add new tasks using the form to the left.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Common Household Tasks</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Cleaning</h5>
+                            <ul>
+                                <li>Sweeping</li>
+                                <li>Mopping</li>
+                                <li>Bathroom Cleaning</li>
+                                <li>Kitchen Cleaning</li>
+                                <li>Window Washing</li>
+                                <li>Dusting</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Cooking & Kitchen</h5>
+                            <ul>
+                                <li>Cooking Meals</li>
+                                <li>Dish Washing</li>
+                                <li>Grocery Shopping</li>
+                                <li>Meal Preparation</li>
+                                <li>Kitchen Organization</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Laundry & Fabric Care</h5>
+                            <ul>
+                                <li>Washing Clothes</li>
+                                <li>Ironing</li>
+                                <li>Folding & Organizing</li>
+                                <li>Bed Making</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Care Services</h5>
+                            <ul>
+                                <li>Baby Sitting</li>
+                                <li>Elderly Care</li>
+                                <li>Pet Care</li>
+                                <li>Plant Watering</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

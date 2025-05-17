@@ -1,0 +1,99 @@
+{% extends "layout.html" %}
+
+{% block title %}Report Incident - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Helper Profile
+        </a>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">Report an Incident</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> This report will be visible to other verified owners. Please ensure all information is factual and accurate.
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center">
+                            {% if helper.photo_url %}
+                                <img src="{{ helper.photo_url }}" alt="Helper Photo" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; background-color: var(--secondary-lavender);">
+                                    <i class="fas fa-user text-primary-purple fa-2x"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h5 class="mb-1">Helper ID: {{ helper.helper_id }}</h5>
+                                <p class="mb-0 text-muted">{{ helper.phone_number }} | {{ helper.state }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        {{ form.helper_id }}
+                        
+                        <div class="mb-3">
+                            {{ form.date.label(class="form-label") }}
+                            {{ form.date(class="form-control datepicker" + (" is-invalid" if form.date.errors else "")) }}
+                            {% if form.date.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=5, placeholder="Provide a detailed description of the incident...") }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.fir_number.label(class="form-label") }}
+                            {{ form.fir_number(class="form-control" + (" is-invalid" if form.fir_number.errors else ""), placeholder="If you've filed a police report, enter the FIR number") }}
+                            {% if form.fir_number.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.fir_number.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="form-text">Optional: Include if you've filed a police report</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-danger btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer">
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Reporting incidents helps protect other homeowners and maintains the safety of our community.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
