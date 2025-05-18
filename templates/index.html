@@ -1,234 +1,373 @@
 {% extends "layout.html" %}
 
+{% block title %}HouseHelpNetwork - India's First Peer-Verified Household Help Platform{% endblock %}
+
 {% block content %}
-<!-- Hero Section -->
-<section class="hero">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
-                <h1>India's First Peer-Verified Household Help Platform</h1>
-                <p>Find trusted household help with verified backgrounds and reviews from your community.</p>
-                {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('search') }}" class="btn btn-light btn-lg me-3">
-                        <i class="fas fa-search"></i> Find Help
-                    </a>
-                    <a href="{{ url_for('create_helper') }}" class="btn btn-secondary btn-lg">
-                        <i class="fas fa-plus"></i> Add Helper
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('register') }}" class="btn btn-light btn-lg me-3">
-                        <i class="fas fa-user-plus"></i> Sign Up
-                    </a>
-                    <a href="{{ url_for('login') }}" class="btn btn-secondary btn-lg">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </a>
-                {% endif %}
-            </div>
-            <div class="col-lg-6 d-none d-lg-block">
-                <!-- Hero illustration would go here (using SVG) -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="100%">
-                    <style>
-                        .primary-purple { fill: #800080; }
-                        .primary-pink { fill: #FFC0CB; }
-                        .secondary-lavender { fill: #F3F0FF; }
-                        .secondary-rose { fill: #FFF0F6; }
-                    </style>
-                    <!-- House -->
-                    <rect class="secondary-lavender" x="100" y="100" width="400" height="250" rx="20" />
-                    <polygon class="primary-purple" points="300,50 100,150 100,100 300,0 500,100 500,150" />
-
-                    <!-- Door -->
-                    <rect class="primary-purple" x="275" y="250" width="75" height="100" rx="5" />
-                    <circle class="primary-pink" cx="330" cy="300" r="5" />
-
-                    <!-- Windows -->
-                    <rect class="secondary-rose" x="150" y="175" width="75" height="75" rx="5" />
-                    <rect class="secondary-rose" x="375" y="175" width="75" height="75" rx="5" />
-
-                    <!-- People -->
-                    <circle class="primary-pink" cx="225" cy="350" r="25" />
-                    <rect class="primary-pink" x="210" y="375" width="30" height="25" rx="5" />
-
-                    <circle class="primary-purple" cx="375" cy="350" r="25" />
-                    <rect class="primary-purple" x="360" y="375" width="30" height="25" rx="5" />
-
-                    <!-- Checkmark -->
-                    <circle class="primary-purple" cx="450" cy="100" r="40" />
-                    <path d="M430,100 L445,115 L470,90" stroke="white" stroke-width="8" fill="none" />
-                </svg>
-            </div>
+<!-- Hero Story Section -->
+<section class="hero py-5">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <h1 class="display-5 mb-4 text-white fw-bold animate__animated animate__fadeIn">"Sita Didi called: 'I can't come back.' And suddenly, your world paused."</h1>
+        <p class="lead mb-3 text-white-80 animate__animated animate__fadeIn animate__delay-1s">You've spent weeks mentoring her—showing her your kitchen, teaching her how you like things done, sharing recipes that make your home sing. Yet one day, the phone rings. No show tomorrow. No explanation.</p>
+        <p class="lead mb-3 text-white-80 animate__animated animate__fadeIn animate__delay-2s">That sinking feeling—that knot in your stomach—knows every mother's fear: who will step in? Who can you trust with your home and your child?</p>
+        <div class="animate__animated animate__fadeInUp animate__delay-3s">
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('search') }}" class="btn btn-light btn-lg me-3 shadow-hover">Check Helper History</a>
+            <a href="{{ url_for('create_helper') }}" class="btn btn-secondary btn-lg shadow-hover">Share Your Experience</a>
+          {% else %}
+            <a href="{{ url_for('register') }}" class="btn btn-light btn-lg me-3 shadow-hover">Join Our Community</a>
+            <a href="{{ url_for('login') }}" class="btn btn-secondary btn-lg shadow-hover">Log In</a>
+          {% endif %}
         </div>
+      </div>
+              <div class="col-lg-6 d-none d-lg-block text-center animate__animated animate__fadeInRight">
+        <img src="{{ url_for('static', filename='images/hero-story.png') }}" alt="Woman worried at door with child" class="img-fluid rounded shadow">
+      </div>
     </div>
+  </div>
 </section>
 
-<!-- Problem and Solution Section -->
-<section class="container my-5">
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h3 class="card-title text-danger"><i class="fas fa-exclamation-circle me-2"></i>The Challenge</h3>
-                    <p class="card-text">Finding reliable household help in India is challenging with:</p>
-                    <ul>
-                        <li>No centralized verification system</li>
-                        <li>Limited background information</li>
-                        <li>High unreliability and frequent churn</li>
-                        <li>Significant skill gaps in household work</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h3 class="card-title text-success"><i class="fas fa-lightbulb me-2"></i>Our Solution</h3>
-                    <p class="card-text">HouseHelpNetwork provides:</p>
-                    <ul>
-                        <li>Community-verified helper profiles with skill assessments</li>
-                        <li>Secure owner-to-owner communications</li>
-                        <li>Detailed work history and performance reviews</li>
-                        <li>Incident reporting system for safety</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- How It Works Section -->
-<section class="container mb-5">
+<!-- Introduction Section -->
+<section class="container py-5">
     <div class="text-center mb-5">
-        <h2>How It Works</h2>
-        <p class="lead">Simple steps to find trusted household help for your home</p>
+        <h2 class="display-6 fw-bold">Peace of Mind, Built by Your Community.</h2>
+        <p class="lead text-muted">Finding reliable household help in India can be a lonely struggle. HouseHelpNetwork brings owners together, sharing experiences to build collective trust.</p>
     </div>
-
-    <div class="row g-4">
-        <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-user-plus fa-3x text-primary-purple"></i>
-                    </div>
-                    <h4>Sign Up</h4>
-                    <p>Create your profile and get verified as a household owner</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-search fa-3x text-primary-purple"></i>
-                    </div>
-                    <h4>Search</h4>
-                    <p>Find helpers by ID or phone number to view their profile</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-history fa-3x text-primary-purple"></i>
-                    </div>
-                    <h4>View History</h4>
-                    <p>Check reviews, work history, and verified background information</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-file-contract fa-3x text-primary-purple"></i>
-                    </div>
-                    <h4>Hire with Confidence</h4>
-                    <p>Create a contract based on peer-verified information</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Features Section -->
-<section class="bg-light py-5 mb-5">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2>Why Choose HouseHelpNetwork?</h2>
-            <p class="lead">The trusted platform for finding reliable household help in India</p>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-6 mb-4">
-                <div class="d-flex">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-shield-alt fa-2x text-primary-purple me-3"></i>
-                    </div>
-                    <div>
-                        <h4>Verified Backgrounds</h4>
-                        <p>All helpers have government IDs and background checks verified by community members for added safety.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-6 mb-4">
-                <div class="d-flex">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-star fa-2x text-primary-purple me-3"></i>
-                    </div>
-                    <div>
-                        <h4>Community Reviews</h4>
-                        <p>Real reviews from actual employers in your area, offering honest feedback on performance.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-6 mb-4">
-                <div class="d-flex">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-history fa-2x text-primary-purple me-3"></i>
-                    </div>
-                    <div>
-                        <h4>Work History</h4>
-                        <p>Complete employment history with detailed records of past jobs, roles, and responsibilities.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-6 mb-4">
-                <div class="d-flex">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-users fa-2x text-primary-purple me-3"></i>
-                    </div>
-                    <div>
-                        <h4>Owner-to-Owner Connect</h4>
-                        <p>Directly contact previous employers to get detailed insights about potential helpers.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Call to Action -->
-<section class="container text-center mb-5">
-    <div class="card bg-primary-purple text-white p-5">
-        <h2>Ready to Find Trusted Household Help?</h2>
-        <p class="lead mb-4">Join thousands of homeowners who have found reliable helpers through our platform</p>
-        {% if current_user.is_authenticated %}
+    <div class="row align-items-stretch">
+        <div class="col-lg-7 mb-4 mb-lg-0 d-flex flex-column">
             <div>
-                <a href="{{ url_for('search') }}" class="btn btn-light btn-lg me-3">Search for Helpers</a>
-                <a href="{{ url_for('create_helper') }}" class="btn btn-secondary btn-lg">Add a Helper</a>
+                <h3 class="fw-bold mb-4">The All-Too-Familiar Struggle We All Face...</h3>
+                <p class="mb-4">As homeowners, we want the best for our families, but the search for dependable help often leads to shared uncertainties and frustrations:</p>
             </div>
-        {% else %}
-            <div>
-                <a href="{{ url_for('register') }}" class="btn btn-light btn-lg me-3">Sign Up Now</a>
-                <a href="{{ url_for('login') }}" class="btn btn-secondary btn-lg">Login</a>
+            <ul class="list-unstyled mb-0">
+                <li class="mb-3 d-flex align-items-start">
+                    <i class="fas fa-question-circle text-primary-purple fa-lg me-3 mt-1"></i>
+                    <div><strong>The Guessing Game:</strong> No centralized verification means you're often unsure who you're truly inviting into your home.</div>
+                </li>
+                <li class="mb-3 d-flex align-items-start">
+                    <i class="fas fa-user-secret text-primary-purple fa-lg me-3 mt-1"></i>
+                    <div><strong>Hidden Stories & Surprises:</strong> Limited background information can hide past issues, leading to unsettling discoveries later.</div>
+                </li>
+                <li class="mb-3 d-flex align-items-start">
+                    <i class="fas fa-ghost text-primary-purple fa-lg me-3 mt-1"></i>
+                    <div><strong>The Vanishing Act:</strong> Dealing with high unreliability and the frustration of helpers who disappear without a word.</div>
+                </li>
+                <li class="mb-3 d-flex align-items-start">
+                    <i class="fas fa-wrench text-primary-purple fa-lg me-3 mt-1"></i>
+                    <div><strong>The Skill Mismatch:</strong> Facing significant skill gaps that don't align with your household's specific needs and standards.</div>
+                </li>
+            </ul>
+        </div>
+        <div class="col-lg-5 d-flex flex-column">
+            <div class="card shadow-sm border-0 p-4 reveal-card h-100" style="background-color: #f8f9fa;">
+                 <h3 class="fw-bold mb-3 text-success"><i class="fas fa-users me-2"></i>Our Collective Solution: A Network of Trust</h3>
+                <p class="mb-3">HouseHelpNetwork is built by owners, for owners. We empower each other through:</p>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-3 d-flex align-items-start">
+                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                        <div><strong>Peer-Verified Profiles & Skills:</strong> Access helper profiles vetted by fellow owners, with honest skill assessments and shared feedback.</div>
+                    </li>
+                    <li class="mb-3 d-flex align-items-start">
+                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                        <div><strong>Shared Work Histories:</strong> View transparent work records and genuine performance reviews contributed by other verified members of our community.</div>
+                    </li>
+                    <li class="mb-3 d-flex align-items-start">
+                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                        <div><strong>Direct Owner-to-Owner Connections:</strong> Securely and privately connect with other owners for direct references and invaluable first-hand insights.</div>
+                    </li>
+                    <li class="mb-3 d-flex align-items-start">
+                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                        <div><strong>Community-Driven Safety:</strong> Our incident reporting system, managed by the community, ensures a trustworthy and accountable network for everyone.</div>
+                    </li>
+                </ul>
             </div>
-        {% endif %}
+        </div>
+    </div>
+    <div class="text-center mt-5">
+         <p class="lead fw-medium">Join our community at HouseHelpNetwork today. Let's transform the anxiety of hiring into the collective assurance of trusted, peer-verified help.</p>
     </div>
 </section>
+
+<!-- Navigation Cards -->
+<section class="container mt-n5 mb-5 position-relative z-index-100">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      <div class="card shadow border-0 animate__animated animate__fadeInUp">
+        <div class="card-body p-0">
+          <div class="row g-0">
+            <div class="col-md-3 text-center p-4 border-end hover-bg-light">
+              <a href="{{ url_for('search') }}" class="text-decoration-none">
+                <div class="icon-circle mb-3 mx-auto bg-light-purple">
+                  <i class="fas fa-history fa-2x text-primary-purple"></i>
+                </div>
+                <h5 class="mb-2">View History</h5>
+                <p class="small text-muted mb-0">Complete employment records</p>
+              </a>
+            </div>
+            <div class="col-md-3 text-center p-4 border-end hover-bg-light">
+              <a href="{{ url_for('create_helper') }}" class="text-decoration-none">
+                <div class="icon-circle mb-3 mx-auto bg-light-purple">
+                  <i class="fas fa-star fa-2x text-primary-purple"></i>
+                </div>
+                <h5 class="mb-2">Share Reviews</h5>
+                <p class="small text-muted mb-0">Help other families</p>
+              </a>
+            </div>
+            <div class="col-md-3 text-center p-4 border-end hover-bg-light">
+              <a href="{{ url_for('profile') }}" class="text-decoration-none">
+                <div class="icon-circle mb-3 mx-auto bg-light-purple">
+                  <i class="fas fa-id-card fa-2x text-primary-purple"></i>
+                </div>
+                <h5 class="mb-2">Verify Identity</h5>
+                <p class="small text-muted mb-0">Confirm who you're trusting</p>
+              </a>
+            </div>
+            <div class="col-md-3 text-center p-4 hover-bg-light">
+              <a href="{{ url_for('aadhaar_verification') }}" class="text-decoration-none">
+                <div class="icon-circle mb-3 mx-auto bg-light-purple">
+                  <i class="fas fa-check-circle fa-2x text-primary-purple"></i>
+                </div>
+                <h5 class="mb-2">Aadhaar Security</h5>
+                <p class="small text-muted mb-0">Government-verified IDs</p>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="text-center py-5 bg-primary-purple text-white position-relative">
+  <div class="cta-wave"></div>
+  <div class="container py-4">
+    <h2 class="mb-3 display-6">Turn Anxiety into Collective Assurance</h2>
+    <p class="lead mb-4">Join hundreds of families helping each other build a safer, more reliable household help network, together.</p>
+    <div class="d-flex justify-content-center flex-wrap">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('search') }}" class="btn btn-light btn-lg me-3 mb-3 shadow-hover pulse-button">Check Helper History</a>
+        <a href="{{ url_for('create_helper') }}" class="btn btn-outline-light btn-lg mb-3 shadow-hover">Share Your Experience</a>
+      {% else %}
+        <a href="{{ url_for('register') }}" class="btn btn-light btn-lg me-3 mb-3 shadow-hover pulse-button">Join Free Now</a>
+        <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg mb-3 shadow-hover">Log In</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+<style>
+  .text-white-80 {
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .position-relative {
+    position: relative;
+  }
+  
+  .z-index-100 {
+    z-index: 100;
+  }
+  
+  .mt-n5 {
+    margin-top: -3rem;
+  }
+  
+  .bg-primary-purple {
+    background-color: var(--primary-purple);
+  }
+  
+  .bg-light-purple {
+    background-color: rgba(128, 0, 128, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-medium);
+  }
+  
+  .icon-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  
+  .hover-bg-light:hover {
+    background-color: rgba(128, 0, 128, 0.05);
+  }
+  
+  .hover-bg-light:hover .icon-circle {
+    background-color: rgba(128, 0, 128, 0.2);
+  }
+  
+  .shadow-hover {
+    transition: all 0.3s ease;
+  }
+  
+  .shadow-hover:hover {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+    transform: translateY(-3px);
+  }
+  
+  .card-decoration {
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    z-index: 0;
+  }
+  
+  .opacity-10 {
+    opacity: 0.1;
+  }
+  
+  .opacity-15 {
+    opacity: 0.15;
+  }
+  
+  .section-title {
+    display: inline-block;
+    position: relative;
+    margin-bottom: 30px;
+  }
+  
+  .section-title:after {
+    content: '';
+    position: absolute;
+    width: 100px;
+    height: 3px;
+    background-color: var(--primary-purple);
+    bottom: -10px;
+    left: calc(50% - 50px);
+  }
+  
+  .step-card {
+    position: relative;
+    padding-top: 20px;
+  }
+  
+  .step-number {
+    position: absolute;
+    top: -15px;
+    right: 20px;
+    background-color: var(--primary-purple);
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+  
+  .testimonial-card {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .quote-mark {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    opacity: 0.1;
+  }
+  
+  .section-wave {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z' opacity='.25' fill='%23800080'%3E%3C/path%3E%3C/svg%3E");
+    background-size: cover;
+  }
+  
+  .cta-wave {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z' opacity='.25' fill='white'%3E%3C/path%3E%3C/svg%3E");
+    background-size: cover;
+    transform: rotate(180deg);
+  }
+  
+  .pulse-button {
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+  }
+  
+  .reveal-card {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  
+  /* For mobile responsiveness */
+  @media (max-width: 768px) {
+    .mt-n5 {
+      margin-top: -1.5rem;
+    }
+    
+    .icon-circle {
+      width: 50px;
+      height: 50px;
+    }
+    
+    .icon-circle i {
+      font-size: 1.2rem !important;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Reveal cards on scroll
+    const cards = document.querySelectorAll('.reveal-card');
+    
+    const revealCard = function() {
+      cards.forEach(card => {
+        const cardTop = card.getBoundingClientRect().top;
+        const triggerBottom = window.innerHeight * 0.8;
+        
+        if(cardTop < triggerBottom) {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }
+      });
+    };
+    
+    window.addEventListener('scroll', revealCard);
+    revealCard(); // Initial check
+  });
+</script>
 {% endblock %}

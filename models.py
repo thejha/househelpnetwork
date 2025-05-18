@@ -37,6 +37,25 @@ class OwnerProfile(db.Model):
     aadhaar_id = db.Column(db.String(12), nullable=True)  # 12-digit Aadhaar number
     aadhaar_verified = db.Column(db.Boolean, default=False)  # Whether Aadhaar has been verified
     aadhaar_verified_at = db.Column(db.DateTime, nullable=True)  # When Aadhaar was verified
+    aadhaar_name = db.Column(db.String(100), nullable=True)  # Name as per Aadhaar
+    aadhaar_gender = db.Column(db.String(10), nullable=True)  # Gender as per Aadhaar
+    aadhaar_dob = db.Column(db.String(20), nullable=True)  # DOB as per Aadhaar
+    aadhaar_address = db.Column(db.Text, nullable=True)  # Complete address as per Aadhaar
+    aadhaar_photo = db.Column(db.Text, nullable=True)  # Base64 encoded photo from Aadhaar
+    
+    # Detailed address components from Aadhaar
+    address_house = db.Column(db.String(100), nullable=True)  # House number/name
+    address_landmark = db.Column(db.String(100), nullable=True)  # Landmark
+    address_vtc = db.Column(db.String(100), nullable=True)  # Village/Town/City
+    address_district = db.Column(db.String(50), nullable=True)  # District
+    address_state = db.Column(db.String(50), nullable=True)  # State
+    address_pincode = db.Column(db.String(10), nullable=True)  # Pincode
+    address_country = db.Column(db.String(50), nullable=True)  # Country
+    address_post_office = db.Column(db.String(100), nullable=True)  # Post Office
+    address_street = db.Column(db.String(100), nullable=True)  # Street
+    address_subdistrict = db.Column(db.String(100), nullable=True)  # Subdistrict
+    
+    # Original fields (may be populated from Aadhaar data or manually)
     pincode = db.Column(db.String(10), nullable=False)
     state = db.Column(db.String(50), nullable=False)
     city = db.Column(db.String(50), nullable=False)

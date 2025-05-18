@@ -1,0 +1,147 @@
+{% extends "layout.html" %}
+
+{% block title %}Aadhaar Details - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Aadhaar Verification Successful</h1>
+    
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Personal Information</h3>
+                </div>
+                <div class="card-body">
+                    {% if aadhaar_data.photo %}
+                    <div class="text-center mb-4">
+                        <img src="data:image/jpeg;base64,{{ aadhaar_data.photo }}" alt="Aadhaar Photo" class="img-fluid rounded mb-3" style="max-width: 200px;">
+                        <h4>{{ aadhaar_data.name }}</h4>
+                        <span class="badge bg-success">Aadhaar Verified</span>
+                    </div>
+                    {% else %}
+                    <div class="text-center mb-4">
+                        <div class="avatar-placeholder mb-3">
+                            <i class="fas fa-user fa-5x text-primary-purple"></i>
+                        </div>
+                        <h4>{{ aadhaar_data.name }}</h4>
+                        <span class="badge bg-success">Aadhaar Verified</span>
+                    </div>
+                    {% endif %}
+                    
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-id-card me-2"></i> Aadhaar Number:  
+                            <span>{{ aadhaar_number[:4] }}********{{ aadhaar_number[-2:] }}</span>
+                        </li>
+                        {% if aadhaar_data.care_of %}
+                        <li class="list-group-item">
+                            <i class="fas fa-user-friends me-2"></i> Care of: {{ aadhaar_data.care_of }}
+                        </li>
+                        {% endif %}
+                        <li class="list-group-item">
+                            <i class="fas fa-venus-mars me-2"></i> Gender: 
+                            {% if aadhaar_data.gender == 'M' %}
+                                Male
+                            {% elif aadhaar_data.gender == 'F' %}
+                                Female
+                            {% else %}
+                                {{ aadhaar_data.gender }}
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-birthday-cake me-2"></i> Date of Birth: {{ aadhaar_data.date_of_birth }}
+                        </li>
+                        {% if aadhaar_data.year_of_birth %}
+                        <li class="list-group-item">
+                            <i class="fas fa-calendar-alt me-2"></i> Year of Birth: {{ aadhaar_data.year_of_birth }}
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Address Details</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success">
+                        <p class="mb-0">Your Aadhaar has been successfully verified!</p>
+                    </div>
+                    
+                    <h5 class="mb-3">Full Address</h5>
+                    <p class="lead">{{ aadhaar_data.full_address }}</p>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">Address Components</h5>
+                    <div class="row">
+                        {% if aadhaar_data.address.house %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">House</label>
+                            <p>{{ aadhaar_data.address.house }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if aadhaar_data.address.landmark %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Landmark</label>
+                            <p>{{ aadhaar_data.address.landmark }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if aadhaar_data.address.street %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Street</label>
+                            <p>{{ aadhaar_data.address.street }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if aadhaar_data.address.vtc %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Village/Town/City</label>
+                            <p>{{ aadhaar_data.address.vtc }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if aadhaar_data.address.district %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">District</label>
+                            <p>{{ aadhaar_data.address.district }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if aadhaar_data.address.state %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">State</label>
+                            <p>{{ aadhaar_data.address.state }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if aadhaar_data.address.pincode %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Pincode</label>
+                            <p>{{ aadhaar_data.address.pincode }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if aadhaar_data.address.country %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Country</label>
+                            <p>{{ aadhaar_data.address.country }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid mt-3">
+                        <a href="{{ url_for('profile') }}" class="btn btn-primary">Back to Profile</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

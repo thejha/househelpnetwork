@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+
+{% block title %}Verify Aadhaar OTP - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Aadhaar Verification</h1>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Enter OTP</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="alert alert-info">
+                            <p>An OTP has been sent to your registered mobile number. Please enter the OTP below to verify your Aadhaar.</p>
+                            <p class="mb-0"><small>This OTP is valid for 10 minutes.</small></p>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                {{ form.otp.label(class="form-label") }}
+                                {{ form.otp(class="form-control", placeholder="Enter 6-digit OTP") }}
+                                {% if form.otp.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.otp.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Please enter the 6-digit OTP sent to your registered mobile number
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {{ form.reference_id(value=reference_id) }}
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

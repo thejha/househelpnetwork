@@ -32,6 +32,10 @@ class Config:
     # File upload settings
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload size
     UPLOAD_FOLDER = "static/uploads"
+    
+    # Uploadcare API keys
+    UPLOADCARE_PUBLIC_KEY = os.environ.get("UPLOADCARE_PUBLIC_KEY", "key_live_5FG3zMrDHspKWq5ifOBYBi5J3rcadaGK")
+    UPLOADCARE_SECRET_KEY = os.environ.get("UPLOADCARE_SECRET_KEY", "secret_live_qRHK9amHpJhX3Txja8Aw1pIqMBPA2pTy")
 
 
 class DevelopmentConfig(Config):

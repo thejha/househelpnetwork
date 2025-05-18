@@ -9,7 +9,7 @@ from extensions import db, bcrypt
 from models import User, OwnerProfile, OwnerDocument, HelperProfile, HelperDocument, TaskList, Contract, Review, IncidentReport, OwnerToOwnerConnect, PincodeMapping, Language
 from forms import (RegistrationForm, LoginForm, OwnerProfileForm, HelperProfileForm, ContractForm, ReviewForm, 
                    IncidentReportForm, OwnerToOwnerConnectForm, SearchForm, TaskListForm,
-                   AadhaarVerificationForm, AadhaarOTPVerificationForm)
+                   AadhaarVerificationForm, AadhaarOTPVerificationForm, AadhaarOTPForm, AadhaarRegistrationForm)
 from utils import save_file, get_unique_id, send_notification
 from aadhaar_api import generate_aadhaar_otp, verify_aadhaar_otp
 
@@ -37,12 +37,94 @@ def register_routes(app):
         if current_user.is_authenticated:
             return redirect(url_for('index'))
         
-        form = RegistrationForm()
+        # Redirect to Aadhaar-based registration
+        flash('Our registration process now starts with Aadhaar verification for enhanced security. Please verify your Aadhaar to register.', 'info')
+        return redirect(url_for('register_with_aadhaar'))
+    
+    @app.route('/register-with-aadhaar', methods=['GET', 'POST'])
+    def register_with_aadhaar():
+        """Step 1: User enters Aadhaar number to start registration"""
+        if current_user.is_authenticated:
+            return redirect(url_for('index'))
+            
+        form = AadhaarVerificationForm()
+        if form.validate_on_submit():
+            aadhaar_id = form.aadhaar_id.data
+            
+            # Call Aadhaar API to generate OTP
+            response = generate_aadhaar_otp(aadhaar_id)
+            
+            if response["success"]:
+                # Store reference_id in session for OTP verification
+                session['aadhaar_reference_id'] = response["reference_id"]
+                session['aadhaar_id'] = aadhaar_id
+                session['registration_flow'] = True  # Mark that we're in registration flow
+                
+                flash(f'OTP sent to your registered mobile number. {response["message"]}', 'success')
+                return redirect(url_for('aadhaar_register_otp'))
+            else:
+                flash(f'Failed to send OTP: {response["message"]}', 'danger')
+        
+        return render_template('register_aadhaar.html', form=form)
+    
+    @app.route('/register-aadhaar-otp', methods=['GET', 'POST'])
+    def aadhaar_register_otp():
+        """Step 2: User enters OTP received for Aadhaar verification"""
+        # Check if we have a reference_id in the session
+        if 'aadhaar_reference_id' not in session or 'aadhaar_id' not in session or 'registration_flow' not in session:
+            flash('Please start the registration process again.', 'warning')
+            return redirect(url_for('register_with_aadhaar'))
+        
+        form = AadhaarOTPForm()
+        
+        if form.validate_on_submit():
+            otp = form.otp.data
+            reference_id = form.reference_id.data or session['aadhaar_reference_id']
+            
+            # Call Sandbox API to verify OTP
+            response = verify_aadhaar_otp(reference_id, otp)
+            
+            if response["success"]:
+                # Store Aadhaar data in session for registration completion
+                session['aadhaar_data'] = response.get("user_details", {})
+                
+                flash('Aadhaar verification successful! Please complete your registration.', 'success')
+                return redirect(url_for('complete_aadhaar_registration'))
+            else:
+                flash(f'Failed to verify OTP: {response["message"]}', 'danger')
+        
+        reference_id = session.get('aadhaar_reference_id', '')
+        return render_template('verify_aadhaar_registration.html', form=form, reference_id=reference_id)
+        
+    @app.route('/complete-registration', methods=['GET', 'POST'])
+    def complete_aadhaar_registration():
+        """Step 3: After successful Aadhaar verification, user completes registration with email and password"""
+        # Check if we have Aadhaar data in the session
+        if 'aadhaar_data' not in session or 'aadhaar_id' not in session or 'registration_flow' not in session:
+            flash('Please start the registration process again.', 'warning')
+            return redirect(url_for('register_with_aadhaar'))
+        
+        aadhaar_data = session.get('aadhaar_data')
+        aadhaar_id = session.get('aadhaar_id')
+        
+        form = AadhaarRegistrationForm()
+        
+        # Pre-populate the phone number from Aadhaar data if available
+        if request.method == 'GET' and aadhaar_data.get('phone'):
+            form.phone_number.data = aadhaar_data.get('phone')
+        
         if form.validate_on_submit():
             try:
+                # Create a new user
                 hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+                
+                # Get address data from Aadhaar
+                address_dict = aadhaar_data.get("address", {})
+                full_address = aadhaar_data.get("full_address", "")
+                
+                # Create user
                 user = User(
-                    name=form.name.data,
+                    name=aadhaar_data.get("name", ""),
                     email=form.email.data,
                     phone_number=form.phone_number.data,
                     password_hash=hashed_password,
@@ -50,16 +132,57 @@ def register_routes(app):
                 )
                 
                 db.session.add(user)
+                db.session.flush()  # Get the user ID without committing
+                
+                # Create owner profile with Aadhaar details
+                owner_profile = OwnerProfile(
+                    owner_id=user.id,
+                    aadhaar_id=aadhaar_id,
+                    aadhaar_verified=True,
+                    aadhaar_verified_at=datetime.datetime.utcnow(),
+                    aadhaar_name=aadhaar_data.get("name", ""),
+                    aadhaar_gender=aadhaar_data.get("gender", ""),
+                    aadhaar_dob=aadhaar_data.get("date_of_birth", ""),
+                    aadhaar_address=full_address,
+                    aadhaar_photo=aadhaar_data.get("photo", ""),
+                    # Detailed address components
+                    address_house=address_dict.get("house", ""),
+                    address_landmark=address_dict.get("landmark", ""),
+                    address_vtc=address_dict.get("vtc", ""),
+                    address_district=address_dict.get("district", ""),
+                    address_state=address_dict.get("state", ""),
+                    address_pincode=str(address_dict.get("pincode", "")),
+                    address_country=address_dict.get("country", "India"),
+                    address_post_office=address_dict.get("post_office", ""),
+                    address_street=address_dict.get("street", ""),
+                    address_subdistrict=address_dict.get("subdistrict", ""),
+                    # Original fields
+                    pincode=str(address_dict.get("pincode", "")),
+                    state=address_dict.get("state", ""),
+                    city=address_dict.get("district", address_dict.get("vtc", "")),
+                    society=address_dict.get("landmark", ""),
+                    street=address_dict.get("street", ""),
+                    apartment_number=address_dict.get("house", ""),
+                    verification_status='Verified'  # Auto-verify users with Aadhaar
+                )
+                
+                db.session.add(owner_profile)
                 db.session.commit()
                 
-                flash('Your account has been created! You can now log in.', 'success')
+                # Clear session data
+                session.pop('aadhaar_data', None)
+                session.pop('aadhaar_id', None)
+                session.pop('aadhaar_reference_id', None)
+                session.pop('registration_flow', None)
+                
+                flash('Your account has been created with verified Aadhaar details! You can now log in.', 'success')
                 return redirect(url_for('login'))
             except Exception as e:
                 db.session.rollback()
                 app.logger.error(f"Error creating user: {str(e)}")
-                flash('An error occurred while creating your account. Please try again.', 'danger')
+                flash(f'An error occurred while creating your account: {str(e)}. Please try again.', 'danger')
         
-        return render_template('register.html', form=form)
+        return render_template('complete_registration.html', form=form, aadhaar_data=aadhaar_data)
     
     @app.route('/login', methods=['GET', 'POST'])
     def login():
@@ -115,49 +238,69 @@ def register_routes(app):
                 session['aadhaar_id'] = aadhaar_id
                 
                 flash(f'OTP sent to your registered mobile number. {response["message"]}', 'success')
-                return redirect(url_for('verify_aadhaar_otp'))
+                return redirect(url_for('verify_sandbox_otp'))
             else:
                 flash(f'Failed to send OTP: {response["message"]}', 'danger')
         
         return render_template('aadhaar_verification.html', form=form)
     
-    @app.route('/verify-aadhaar-otp', methods=['GET', 'POST'])
+    @app.route('/verify-sandbox-otp', methods=['GET', 'POST'])
     @login_required
-    def verify_aadhaar_otp():
+    def verify_sandbox_otp():
         # Check if we have a reference_id in the session
         if 'aadhaar_reference_id' not in session or 'aadhaar_id' not in session:
             flash('Please start the Aadhaar verification process again.', 'warning')
-            return redirect(url_for('aadhaar_verification'))
+            return redirect(url_for('profile'))
         
-        form = AadhaarOTPVerificationForm()
-        form.reference_id.data = session['aadhaar_reference_id']
+        form = AadhaarOTPForm()
         
         if form.validate_on_submit():
             otp = form.otp.data
-            reference_id = form.reference_id.data
+            reference_id = form.reference_id.data or session['aadhaar_reference_id']
             
-            # Call Aadhaar API to verify OTP
+            # Call Sandbox API to verify OTP
             response = verify_aadhaar_otp(reference_id, otp)
             
             if response["success"]:
                 # Create or update owner profile with Aadhaar details
                 owner_profile = OwnerProfile.query.filter_by(owner_id=current_user.id).first()
                 user_details = response.get("user_details", {})
+                address_dict = user_details.get("address", {})
                 
-                # If profile doesn't exist, create a new one with minimal details
+                # Format the complete address as a string for storage
+                full_address = user_details.get("full_address", "")
+                
+                # If profile doesn't exist, create a new one
                 if not owner_profile:
                     owner_profile = OwnerProfile(
                         owner_id=current_user.id,
                         aadhaar_id=session['aadhaar_id'],
                         aadhaar_verified=True,
                         aadhaar_verified_at=datetime.datetime.utcnow(),
-                        pincode="",  # Will be filled in the profile form
-                        state=user_details.get("address", {}).get("state", ""),
-                        city=user_details.get("address", {}).get("city", ""),
-                        society="",  # Will be filled in the profile form
-                        street="",  # Will be filled in the profile form
-                        apartment_number="",  # Will be filled in the profile form
-                        verification_status='Pending'
+                        aadhaar_name=user_details.get("name", ""),
+                        aadhaar_gender=user_details.get("gender", ""),
+                        aadhaar_dob=user_details.get("date_of_birth", ""),
+                        aadhaar_address=full_address,
+                        aadhaar_photo=user_details.get("photo", ""),
+                        # Detailed address components
+                        address_house=address_dict.get("house", ""),
+                        address_landmark=address_dict.get("landmark", ""),
+                        address_vtc=address_dict.get("vtc", ""),
+                        address_district=address_dict.get("district", ""),
+                        address_state=address_dict.get("state", ""),
+                        address_pincode=str(address_dict.get("pincode", "")),
+                        address_country=address_dict.get("country", "India"),
+                        address_post_office=address_dict.get("post_office", ""),
+                        address_street=address_dict.get("street", ""),
+                        address_subdistrict=address_dict.get("subdistrict", ""),
+                        # Original fields
+                        pincode=str(address_dict.get("pincode", "")),
+                        state=address_dict.get("state", ""),
+                        city=address_dict.get("district", address_dict.get("vtc", "")),
+                        society=address_dict.get("landmark", ""),
+                        street=address_dict.get("street", ""),
+                        apartment_number=address_dict.get("house", ""),
+                        verification_status='Verified'  # Auto-verify users with Aadhaar
                     )
                     db.session.add(owner_profile)
                 else:
@@ -165,11 +308,32 @@ def register_routes(app):
                     owner_profile.aadhaar_id = session['aadhaar_id']
                     owner_profile.aadhaar_verified = True
                     owner_profile.aadhaar_verified_at = datetime.datetime.utcnow()
-                    # Update state and city if not already set
-                    if not owner_profile.state:
-                        owner_profile.state = user_details.get("address", {}).get("state", "")
-                    if not owner_profile.city:
-                        owner_profile.city = user_details.get("address", {}).get("city", "")
+                    owner_profile.aadhaar_name = user_details.get("name", "")
+                    owner_profile.aadhaar_gender = user_details.get("gender", "")
+                    owner_profile.aadhaar_dob = user_details.get("date_of_birth", "")
+                    owner_profile.aadhaar_address = full_address
+                    owner_profile.aadhaar_photo = user_details.get("photo", "")
+                    
+                    # Update detailed address components
+                    owner_profile.address_house = address_dict.get("house", "")
+                    owner_profile.address_landmark = address_dict.get("landmark", "")
+                    owner_profile.address_vtc = address_dict.get("vtc", "")
+                    owner_profile.address_district = address_dict.get("district", "")
+                    owner_profile.address_state = address_dict.get("state", "")
+                    owner_profile.address_pincode = str(address_dict.get("pincode", ""))
+                    owner_profile.address_country = address_dict.get("country", "India")
+                    owner_profile.address_post_office = address_dict.get("post_office", "")
+                    owner_profile.address_street = address_dict.get("street", "")
+                    owner_profile.address_subdistrict = address_dict.get("subdistrict", "")
+                    
+                    # Update original fields
+                    owner_profile.verification_status = 'Verified'  # Auto-verify users with Aadhaar
+                    owner_profile.pincode = str(address_dict.get("pincode", owner_profile.pincode))
+                    owner_profile.state = address_dict.get("state", owner_profile.state)
+                    owner_profile.city = address_dict.get("district", address_dict.get("vtc", owner_profile.city))
+                    owner_profile.society = address_dict.get("landmark", owner_profile.society)
+                    owner_profile.street = address_dict.get("street", owner_profile.street)
+                    owner_profile.apartment_number = address_dict.get("house", owner_profile.apartment_number)
                 
                 # Update user's name if it came from Aadhaar
                 if user_details.get("name") and user_details["name"] != current_user.name:
@@ -177,77 +341,61 @@ def register_routes(app):
                 
                 db.session.commit()
                 
-                # Clear session data
-                session.pop('aadhaar_reference_id', None)
-                session.pop('aadhaar_id', None)
+                # Store Aadhaar data in session for display
+                session['aadhaar_data'] = user_details
                 
-                flash('Aadhaar verification successful! Please complete your profile.', 'success')
-                return redirect(url_for('profile'))
+                # Clear session data after use
+                aadhaar_id = session.pop('aadhaar_id', None)
+                session.pop('aadhaar_reference_id', None)
+                
+                flash('Aadhaar verification successful!', 'success')
+                return redirect(url_for('aadhaar_details', aadhaar_id=aadhaar_id))
             else:
                 flash(f'Failed to verify OTP: {response["message"]}', 'danger')
         
-        return render_template('verify_aadhaar_otp.html', form=form)
+        reference_id = session.get('aadhaar_reference_id', '')
+        return render_template('verify_aadhaar.html', form=form, reference_id=reference_id)
+        
+    @app.route('/aadhaar-details/<aadhaar_id>')
+    @login_required
+    def aadhaar_details(aadhaar_id):
+        # Check if we have Aadhaar data in the session
+        aadhaar_data = session.get('aadhaar_data')
+        if not aadhaar_data:
+            flash('No Aadhaar data found. Please verify your Aadhaar again.', 'warning')
+            return redirect(url_for('profile'))
+        
+        # Clear Aadhaar data from session after displaying
+        session.pop('aadhaar_data', None)
+        
+        return render_template('aadhaar_details.html', aadhaar_data=aadhaar_data, aadhaar_number=aadhaar_id)
     
     # Profile routes
     @app.route('/profile', methods=['GET', 'POST'])
     @login_required
     def profile():
-        # Check if Aadhaar is verified
+        # Check if we already have an owner profile
         owner_profile = OwnerProfile.query.filter_by(owner_id=current_user.id).first()
-        
-        if owner_profile is None or not owner_profile.aadhaar_verified:
-            flash('You must verify your Aadhaar first.', 'warning')
-            return redirect(url_for('aadhaar_verification'))
-        
         form = OwnerProfileForm()
         
         if form.validate_on_submit():
-            if owner_profile:
-                # Update existing profile
-                owner_profile.pincode = form.pincode.data
-                owner_profile.state = form.state.data
-                owner_profile.city = form.city.data
-                owner_profile.society = form.society.data
-                owner_profile.street = form.street.data
-                owner_profile.apartment_number = form.apartment_number.data
-                # Commit to ensure we have the owner_profile.id
-                db.session.commit()
+            aadhaar_id = form.aadhaar_id.data
+            # Generate OTP via Sandbox API
+            response = generate_aadhaar_otp(aadhaar_id)
             
-            # Handle document uploads - only after profile has been saved and has an ID
-            if form.documents.data:
-                for document in form.documents.data:
-                    if document.filename:
-                        document_url = save_file(document, 'owner_documents')
-                        # Extract document type from filename (ensure it's a valid value)
-                        filename = document.filename
-                        doc_type = os.path.splitext(filename)[0]  # Get filename without extension
-                        
-                        # Create document with the owner_profile_id
-                        if owner_profile and owner_profile.id:
-                            owner_doc = OwnerDocument(
-                                owner_profile_id=owner_profile.id,
-                                type=doc_type,
-                                url=document_url
-                            )
-                            db.session.add(owner_doc)
-                        else:
-                            flash('Unable to attach document - profile ID not available.', 'danger')
-            
-            # Final commit to save documents
-            db.session.commit()
-            flash('Your profile has been updated!', 'success')
-            return redirect(url_for('profile'))
+            if response["success"]:
+                # Store reference_id in session for OTP verification
+                session['aadhaar_id'] = aadhaar_id
+                session['aadhaar_reference_id'] = response["reference_id"]
+                
+                flash(f'OTP sent to your registered mobile number. {response["message"]}', 'success')
+                return redirect(url_for('verify_sandbox_otp'))
+            else:
+                flash(f'Failed to verify Aadhaar: {response["message"]}', 'danger')
         
         elif request.method == 'GET' and owner_profile:
-            # Pre-populate form with existing data
+            # Pre-populate form with existing Aadhaar data
             form.aadhaar_id.data = owner_profile.aadhaar_id
-            form.name.data = current_user.name
-            form.pincode.data = owner_profile.pincode
-            form.state.data = owner_profile.state
-            form.city.data = owner_profile.city
-            form.society.data = owner_profile.society
-            form.street.data = owner_profile.street
-            form.apartment_number.data = owner_profile.apartment_number
         
         # Get list of documents if profile exists
         documents = []
@@ -582,6 +730,11 @@ def register_routes(app):
         total_helpers = HelperProfile.query.count()
         total_owners = User.query.filter_by(role='owner').count()
         pending_verifications = OwnerProfile.query.filter_by(verification_status='Pending').count()
+        aadhaar_verified_users = OwnerProfile.query.filter_by(aadhaar_verified=True).count()
+        manual_verified_users = OwnerProfile.query.filter(
+            OwnerProfile.verification_status == 'Verified',
+            OwnerProfile.aadhaar_verified == False
+        ).count()
         
         recent_helpers = HelperProfile.query.order_by(HelperProfile.created_at.desc()).limit(5).all()
         recent_reviews = Review.query.order_by(Review.timestamp.desc()).limit(5).all()
@@ -591,6 +744,8 @@ def register_routes(app):
                               total_helpers=total_helpers,
                               total_owners=total_owners,
                               pending_verifications=pending_verifications,
+                              aadhaar_verified_users=aadhaar_verified_users,
+                              manual_verified_users=manual_verified_users,
                               recent_helpers=recent_helpers,
                               recent_reviews=recent_reviews,
                               recent_incidents=recent_incidents)
@@ -833,6 +988,7 @@ def register_routes(app):
     @login_required
     @admin_required
     def verify_users():
+        # Only get profiles that need manual verification (not already verified via Aadhaar)
         pending_profiles = OwnerProfile.query.filter_by(verification_status='Pending').all()
         
         profiles_with_users = []

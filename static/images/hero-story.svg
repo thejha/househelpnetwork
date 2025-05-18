@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f9d0c4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f5b8b0;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Shadow filter -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="url(#bgGradient)" />
+  
+  <!-- Door frame -->
+  <rect x="150" y="50" width="250" height="500" rx="6" fill="#8a5777" />
+  <rect x="160" y="60" width="230" height="480" rx="4" fill="#f9e6e0" />
+  
+  <!-- Inner door -->
+  <rect x="180" y="80" width="190" height="440" rx="2" fill="#f0d7d1" />
+  
+  <!-- Door handle -->
+  <circle cx="350" cy="280" r="10" fill="#6a3e60" />
+  
+  <!-- Mother figure -->
+  <g transform="translate(400, 160)">
+    <!-- Body -->
+    <path d="M0,150 Q-10,20 -50,0 Q-110,20 -120,150 L-130,320 L10,320 Z" fill="#6a3e60" />
+    
+    <!-- Neck -->
+    <rect x="-85" y="135" width="40" height="20" rx="10" fill="#7d4b6d" />
+    
+    <!-- Head -->
+    <ellipse cx="-65" cy="100" rx="40" ry="50" fill="#7d4b6d" />
+    
+    <!-- Hair -->
+    <path d="M-95,90 Q-110,30 -80,30 Q-50,30 -35,70 L-35,130 Q-50,150 -80,160 Q-110,140 -110,120 Z" fill="#442436" />
+    <path d="M-40,60 Q-30,90 -35,130 Q-25,160 -10,170 L-20,100 Z" fill="#442436" />
+    
+    <!-- Face details -->
+    <ellipse cx="-80" cy="90" rx="5" ry="3" fill="#442436" /> <!-- Left eye -->
+    <ellipse cx="-55" cy="90" rx="5" ry="3" fill="#442436" /> <!-- Right eye -->
+    <path d="M-80,106 Q-68,100 -55,106" stroke="#442436" stroke-width="2" fill="none" /> <!-- Sad mouth -->
+    <path d="M-75,85 L-65,80" stroke="#442436" stroke-width="1" /> <!-- Left eyebrow -->
+    <path d="M-60,80 L-50,85" stroke="#442436" stroke-width="1" /> <!-- Right eyebrow -->
+    
+    <!-- Arms -->
+    <path d="M-120,180 Q-140,200 -100,250" fill="#7d4b6d" /> <!-- Left arm -->
+    <path d="M-10,180 Q10,190 -20,250" fill="#7d4b6d" /> <!-- Right arm -->
+    
+    <!-- Phone in hand -->
+    <g transform="translate(-60, 240)">
+      <rect width="35" height="65" rx="5" fill="#442436" />
+      <rect x="3" y="5" width="29" height="55" rx="2" fill="#333" />
+      <circle cx="17.5" cy="5" r="1.5" fill="#555" />
+    </g>
+  </g>
+  
+  <!-- Child figure -->
+  <g transform="translate(390, 380)">
+    <!-- Body -->
+    <path d="M-10,60 L-15,130 L-55,130 L-60,60 Q-35,40 -10,60" fill="#6a3e60" />
+    
+    <!-- Head -->
+    <ellipse cx="-35" cy="30" rx="25" ry="30" fill="#7d4b6d" />
+    
+    <!-- Hair -->
+    <path d="M-55,20 Q-65,0 -50,0 Q-30,-5 -15,10 L-15,50 Q-25,60 -35,60 Q-55,55 -55,40 Z" fill="#442436" />
+    
+    <!-- Face details -->
+    <ellipse cx="-45" cy="25" rx="3" ry="2" fill="#442436" /> <!-- Left eye -->
+    <ellipse cx="-25" cy="25" rx="3" ry="2" fill="#442436" /> <!-- Right eye -->
+    <path d="M-40,37 Q-35,35 -30,37" stroke="#442436" stroke-width="1" fill="none" /> <!-- Sad mouth -->
+    
+    <!-- Arms -->
+    <path d="M-60,70 Q-80,75 -60,90" fill="#7d4b6d" /> <!-- Left arm -->
+    <path d="M-10,70 Q0,75 -15,90" fill="#7d4b6d" /> <!-- Right arm -->
+    
+    <!-- Legs (implied under dress) -->
+  </g>
+  
+  <!-- Wall shadow details -->
+  <line x1="450" y1="50" x2="450" y2="550" stroke="#d9bcb5" stroke-width="1" opacity="0.5" />
+  <line x1="470" y1="50" x2="470" y2="550" stroke="#d9bcb5" stroke-width="1" opacity="0.5" />
+  <line x1="50" y1="50" x2="50" y2="550" stroke="#d9bcb5" stroke-width="1" opacity="0.5" />
+  <line x1="70" y1="50" x2="70" y2="550" stroke="#d9bcb5" stroke-width="1" opacity="0.5" />
+</svg> 

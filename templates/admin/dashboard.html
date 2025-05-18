@@ -49,6 +49,42 @@
         </div>
     </div>
     
+    <!-- Verification Stats -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Verification Statistics</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <div class="p-3 border rounded mb-3">
+                                <i class="fas fa-id-card fa-2x text-success mb-3"></i>
+                                <h3 class="stat-number">{{ aadhaar_verified_users }}</h3>
+                                <p class="stat-label">Aadhaar Verified</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="p-3 border rounded mb-3">
+                                <i class="fas fa-user-shield fa-2x text-primary mb-3"></i>
+                                <h3 class="stat-number">{{ manual_verified_users }}</h3>
+                                <p class="stat-label">Admin Verified</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="p-3 border rounded mb-3">
+                                <i class="fas fa-clock fa-2x text-warning mb-3"></i>
+                                <h3 class="stat-number">{{ pending_verifications }}</h3>
+                                <p class="stat-label">Awaiting Verification</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Admin Actions -->
     <div class="row mb-5">
         <div class="col-md-4">

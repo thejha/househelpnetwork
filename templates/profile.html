@@ -15,14 +15,21 @@
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-4">
-                        <div class="avatar-placeholder mb-3">
-                            <i class="fas fa-user fa-5x text-primary-purple"></i>
-                        </div>
+                        {% if owner_profile and owner_profile.aadhaar_photo %}
+                            <img src="data:image/jpeg;base64,{{ owner_profile.aadhaar_photo }}" alt="Aadhaar Photo" class="img-fluid rounded mb-3" style="max-width: 200px;">
+                        {% else %}
+                            <div class="avatar-placeholder mb-3">
+                                <i class="fas fa-user fa-5x text-primary-purple"></i>
+                            </div>
+                        {% endif %}
                         <h4>{{ current_user.name }}</h4>
                         {% if owner_profile %}
                             <span class="badge {% if owner_profile.verification_status == 'Verified' %}badge-verified{% elif owner_profile.verification_status == 'Pending' %}badge-pending{% else %}badge-rejected{% endif %}">
                                 {{ owner_profile.verification_status }}
                             </span>
+                            {% if owner_profile.verification_status == 'Verified' and owner_profile.aadhaar_verified %}
+                                <span class="badge bg-info">Aadhaar Verified</span>
+                            {% endif %}
                         {% endif %}
                     </div>
                     
@@ -43,6 +50,17 @@
                                 <a href="{{ url_for('aadhaar_verification') }}" class="btn btn-sm btn-primary ms-2">Verify Now</a>
                             {% endif %}
                         </li>
+                        {% if owner_profile and owner_profile.aadhaar_verified %}
+                        <li class="list-group-item">
+                            <i class="fas fa-user me-2"></i> Aadhaar Name: {{ owner_profile.aadhaar_name }}
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-venus-mars me-2"></i> Gender: {{ owner_profile.aadhaar_gender }}
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-birthday-cake me-2"></i> DOB: {{ owner_profile.aadhaar_dob }}
+                        </li>
+                        {% endif %}
                         <li class="list-group-item">
                             <i class="fas fa-user-shield me-2"></i> Role: {{ current_user.role.capitalize() }}
                         </li>
@@ -54,164 +72,98 @@
             </div>
         </div>
         
-        <!-- Address and Verification Card -->
+        <!-- Aadhaar Verification Card -->
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="mb-0">Address & Verification</h3>
+                    <h3 class="mb-0">Aadhaar Verification</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
-                        {{ form.hidden_tag() }}
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.aadhaar_id.label(class="form-label") }}
-                                {{ form.aadhaar_id(class="form-control", readonly=true) }}
-                                <div class="form-text">
-                                    Verified through Aadhaar OTP verification
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                {{ form.name.label(class="form-label") }}
-                                {{ form.name(class="form-control", readonly=true) }}
-                            </div>
+                    {% if owner_profile and owner_profile.aadhaar_verified %}
+                        <div class="alert alert-success">
+                            <p><i class="fas fa-check-circle me-2"></i> <strong>Your Aadhaar is verified!</strong></p>
+                            <p class="mb-0">Your profile details have been updated with information from your Aadhaar.</p>
                         </div>
                         
+                        <h5 class="mt-4 mb-3">Verified Address Details</h5>
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.pincode.label(class="form-label") }}
-                                {{ form.pincode(class="form-control" + (" is-invalid" if form.pincode.errors else ""), id="pincode") }}
-                                {% if form.pincode.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.pincode.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                                <div id="pincode-search-results"></div>
+                            {% if owner_profile.address_house %}
+                            <div class="col-md-6 mb-2">
+                                <strong>House:</strong> {{ owner_profile.address_house }}
                             </div>
-                            <script>
-                                document.getElementById('pincode').addEventListener('input', function(e) {
-                                    const pincode = e.target.value;
-                                    if (pincode.length >= 6) {
-                                        fetch(`/pincodes/lookup?pincode=${pincode}`)
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                if (data.success && data.result) {
-                                                    document.getElementById('state').value = data.result.state;
-                                                    document.getElementById('city').value = data.result.city;
-                                                    document.getElementById('society').value = data.result.society;
-                                                }
-                                            })
-                                            .catch(error => {
-                                                console.error('Error looking up pincode:', error);
-                                            });
-                                    }
-                                });
-                            </script>
-                            
-                            <div class="col-md-6 mb-3">
-                                {{ form.state.label(class="form-label") }}
-                                {{ form.state(class="form-control" + (" is-invalid" if form.state.errors else ""), id="state") }}
-                                {% if form.state.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.state.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.city.label(class="form-label") }}
-                                {{ form.city(class="form-control" + (" is-invalid" if form.city.errors else ""), id="city") }}
-                                {% if form.city.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.city.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                {{ form.society.label(class="form-label") }}
-                                {{ form.society(class="form-control" + (" is-invalid" if form.society.errors else ""), id="society") }}
-                                {% if form.society.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.society.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.street.label(class="form-label") }}
-                                {{ form.street(class="form-control" + (" is-invalid" if form.street.errors else "")) }}
-                                {% if form.street.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.street.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                {{ form.apartment_number.label(class="form-label") }}
-                                {{ form.apartment_number(class="form-control" + (" is-invalid" if form.apartment_number.errors else "")) }}
-                                {% if form.apartment_number.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.apartment_number.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            {{ form.documents.label(class="form-label") }}
-                            {{ form.documents(class="form-control" + (" is-invalid" if form.documents.errors else ""), accept=".jpg,.png,.pdf") }}
-                            {% if form.documents.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.documents.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
                             {% endif %}
-                            <div class="form-text">
-                                Upload additional address proof like utility bills, etc. for verification (JPG, PNG, PDF only).
+                            
+                            {% if owner_profile.address_landmark %}
+                            <div class="col-md-6 mb-2">
+                                <strong>Landmark:</strong> {{ owner_profile.address_landmark }}
                             </div>
+                            {% endif %}
+                            
+                            {% if owner_profile.address_vtc %}
+                            <div class="col-md-6 mb-2">
+                                <strong>Village/Town/City:</strong> {{ owner_profile.address_vtc }}
+                            </div>
+                            {% endif %}
+                            
+                            {% if owner_profile.address_district %}
+                            <div class="col-md-6 mb-2">
+                                <strong>District:</strong> {{ owner_profile.address_district }}
+                            </div>
+                            {% endif %}
+                            
+                            {% if owner_profile.address_state %}
+                            <div class="col-md-6 mb-2">
+                                <strong>State:</strong> {{ owner_profile.address_state }}
+                            </div>
+                            {% endif %}
+                            
+                            {% if owner_profile.address_pincode %}
+                            <div class="col-md-6 mb-2">
+                                <strong>Pincode:</strong> {{ owner_profile.address_pincode }}
+                            </div>
+                            {% endif %}
+                            
+                            {% if owner_profile.address_country %}
+                            <div class="col-md-6 mb-2">
+                                <strong>Country:</strong> {{ owner_profile.address_country }}
+                            </div>
+                            {% endif %}
+                            
+                            {% if owner_profile.address_post_office %}
+                            <div class="col-md-6 mb-2">
+                                <strong>Post Office:</strong> {{ owner_profile.address_post_office }}
+                            </div>
+                            {% endif %}
                         </div>
                         
-                        {% if documents %}
-                            <div class="mb-4">
-                                <h5>Uploaded Documents</h5>
-                                <div class="row">
-                                    {% for doc in documents %}
-                                        <div class="col-md-6 mb-2">
-                                            <div class="border rounded p-2">
-                                                <i class="fas fa-file-alt me-2"></i>
-                                                <strong>{{ doc.type }}</strong>
-                                            </div>
+                        <h6 class="mt-3 mb-2">Complete Address:</h6>
+                        <p class="border-start ps-3 py-2 bg-light">{{ owner_profile.aadhaar_address }}</p>
+                    {% else %}
+                        <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+                            {{ form.hidden_tag() }}
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.aadhaar_id.label(class="form-label") }}
+                                    {{ form.aadhaar_id(class="form-control", placeholder="Enter 12-digit Aadhaar number") }}
+                                    {% if form.aadhaar_id.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.aadhaar_id.errors %}
+                                                <span>{{ error }}</span>
+                                            {% endfor %}
                                         </div>
-                                    {% endfor %}
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Please enter your 12-digit Aadhaar number for verification
+                                    </div>
                                 </div>
                             </div>
-                        {% endif %}
-                        
-                        <div class="d-grid">
-                            {{ form.submit(class="btn btn-primary") }}
-                        </div>
-                    </form>
+                            
+                            <div class="d-grid">
+                                {{ form.submit(class="btn btn-primary") }}
+                            </div>
+                        </form>
+                    {% endif %}
                 </div>
                 
                 {% if owner_profile %}
@@ -226,6 +178,10 @@
                             <small class="text-muted">Your profile is pending verification by our admin.</small>
                         {% elif owner_profile.verification_status == 'Rejected' %}
                             <small class="text-danger">Your verification was rejected. Please update your information and upload valid documents.</small>
+                        {% elif owner_profile.verification_status == 'Verified' and owner_profile.aadhaar_verified %}
+                            <small class="text-success">Your profile has been automatically verified through Aadhaar verification.</small>
+                        {% elif owner_profile.verification_status == 'Verified' %}
+                            <small class="text-success">Your profile has been verified by an admin.</small>
                         {% endif %}
                     </div>
                 {% endif %}
@@ -234,3 +190,4 @@
     </div>
 </div>
 {% endblock %}
+

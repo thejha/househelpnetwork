@@ -1,5 +1,7 @@
 import os
 import uuid
+import requests
+import json
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask import current_app
@@ -33,6 +35,43 @@ def save_file(file, subfolder):
     except Exception as e:
         current_app.logger.error(f"Error saving file: {e}")
         return None
+
+def get_uploadcare_file_info(file_uuid):
+    """Get file info from Uploadcare API."""
+    if not file_uuid:
+        return None
+    
+    api_url = f"https://api.uploadcare.com/files/{file_uuid}/"
+    headers = {
+        "Accept": "application/vnd.uploadcare-v0.7+json",
+        "Authorization": f"Uploadcare.Simple {current_app.config['UPLOADCARE_PUBLIC_KEY']}:{current_app.config['UPLOADCARE_SECRET_KEY']}"
+    }
+    
+    try:
+        response = requests.get(api_url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            current_app.logger.error(f"Error getting file info from Uploadcare: {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        current_app.logger.error(f"Exception getting file info from Uploadcare: {e}")
+        return None
+
+def process_uploadcare_url(cdn_url):
+    """Extract file UUID from Uploadcare CDN URL."""
+    if not cdn_url:
+        return None
+    
+    # Extract UUID from URL
+    # URL format: https://ucarecdn.com/UUID/
+    # or https://ucarecdn.com/UUID/filename
+    parts = cdn_url.strip('/').split('/')
+    for part in parts:
+        if '-' in part and len(part) > 30:  # Typical UUID format
+            return part
+    
+    return None
 
 def get_unique_id(prefix=''):
     """Generate a unique ID with an optional prefix."""

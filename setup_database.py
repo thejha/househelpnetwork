@@ -66,6 +66,7 @@ def recreate_tables():
         db.drop_all()
         logger.info("Creating all tables...")
         db.create_all()
+        logger.info("Tables recreated successfully, including new Aadhaar address fields.")
 
 def setup_database():
     with app.app_context():

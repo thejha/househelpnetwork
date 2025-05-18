@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block title %}Verify Aadhaar OTP - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h4>Verify Aadhaar OTP</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p><i class="fas fa-mobile-alt me-2"></i> An OTP has been sent to your mobile number registered with Aadhaar.</p>
+                        <p class="mb-0">Please enter the 6-digit OTP below to verify your identity.</p>
+                    </div>
+                    
+                    {% include "partials/flash_messages.html" %}
+                    
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-group mb-3">
+                            {{ form.otp.label(class="form-label") }}
+                            {% if form.otp.errors %}
+                                {{ form.otp(class="form-control is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.otp.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.otp(class="form-control", placeholder="Enter 6-digit OTP") }}
+                            {% endif %}
+                            <div class="form-text">
+                                This OTP is valid for 10 minutes. If you didn't receive the OTP, you can <a href="{{ url_for('register_with_aadhaar') }}">try again</a>.
+                            </div>
+                        </div>
+                        
+                        {{ form.reference_id(value=reference_id) }}
+                        
+                        <div class="form-group mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted">
+                    <p class="mb-0">
+                        <a href="{{ url_for('register_with_aadhaar') }}"><i class="fas fa-arrow-left me-1"></i> Back to Aadhaar Entry</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

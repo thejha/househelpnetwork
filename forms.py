@@ -47,18 +47,40 @@ class AadhaarOTPVerificationForm(FlaskForm):
     reference_id = HiddenField('Reference ID')
     submit = SubmitField('Verify OTP')
 
+class AadhaarOTPForm(FlaskForm):
+    otp = StringField('OTP', validators=[
+        DataRequired(), 
+        Length(min=6, max=6, message="OTP must be 6 digits"),
+        Regexp('^\d{6}$', message="OTP must be 6 digits")
+    ])
+    reference_id = HiddenField('Reference ID')
+    submit = SubmitField('Verify OTP')
+
+class AadhaarRegistrationForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    phone_number = StringField('Phone Number', validators=[DataRequired(), Length(min=10, max=15)])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=8)])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Complete Registration')
+    
+    # Custom validators for unique email and phone number
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('Email address is already registered. Please use a different email or login.')
+    
+    def validate_phone_number(self, phone_number):
+        user = User.query.filter_by(phone_number=phone_number.data).first()
+        if user:
+            raise ValidationError('Phone number is already registered. Please use a different phone number.')
+
 class OwnerProfileForm(FlaskForm):
-    aadhaar_id = StringField('Aadhaar Number', render_kw={'readonly': True})
-    name = StringField('Full Name', render_kw={'readonly': True})
-    pincode = StringField('Pincode', validators=[DataRequired(), Length(min=6, max=10)])
-    state = StringField('State', validators=[DataRequired()])
-    city = StringField('City', validators=[DataRequired()])
-    society = StringField('Society/Building Name', validators=[DataRequired()])
-    street = StringField('Street', validators=[DataRequired()])
-    apartment_number = StringField('Apartment Number', validators=[DataRequired()])
-    documents = MultipleFileField('Upload Documents (Utility Bills, etc.)', 
-                                validators=[FileAllowed(['jpg', 'png', 'pdf'], 'Images and PDFs only')])
-    submit = SubmitField('Save Profile')
+    aadhaar_id = StringField('Aadhaar Number', validators=[
+        DataRequired(), 
+        Length(min=12, max=12, message="Aadhaar number must be 12 digits"),
+        Regexp('^\d{12}$', message="Aadhaar number must be 12 digits")
+    ])
+    submit = SubmitField('Save Aadhaar')
 
 class HelperProfileForm(FlaskForm):
     name = StringField('Helper Name', validators=[DataRequired(), Length(min=2, max=100)])

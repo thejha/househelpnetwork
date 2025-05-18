@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block title %}Register with Aadhaar - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h4>Register with Aadhaar</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p><i class="fas fa-info-circle me-2"></i> We require Aadhaar verification for all new users to ensure a safe and trusted community.</p>
+                        <p class="mb-0">Please enter your 12-digit Aadhaar number below to start the verification process.</p>
+                    </div>
+                    
+                    {% include "partials/flash_messages.html" %}
+                    
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-group mb-3">
+                            {{ form.aadhaar_id.label(class="form-label") }}
+                            {% if form.aadhaar_id.errors %}
+                                {{ form.aadhaar_id(class="form-control is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.aadhaar_id.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.aadhaar_id(class="form-control", placeholder="Enter 12-digit Aadhaar number") }}
+                            {% endif %}
+                            <div class="form-text">
+                                Your Aadhaar number will be verified via OTP sent to your registered mobile number.
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted">
+                    <p class="mb-0">
+                        Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
