@@ -14,7 +14,11 @@
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
+                    {% if helper.verification_status == 'Verified' %}
+                    <h3 class="mb-0">Enter OTP for Re-verification</h3>
+                    {% else %}
                     <h3 class="mb-0">Enter OTP</h3>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-4">
@@ -33,7 +37,11 @@
                     
                     <div class="alert alert-info mb-4">
                         <i class="fas fa-info-circle me-2"></i>
+                        {% if helper.verification_status == 'Verified' %}
+                        Please enter the OTP sent to the mobile number linked with Aadhaar. This will update the helper's profile with the latest Aadhaar information.
+                        {% else %}
                         Please enter the OTP sent to the mobile number linked with Aadhaar.
+                        {% endif %}
                     </div>
                     
                     <form method="POST" class="needs-validation" novalidate>

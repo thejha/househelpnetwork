@@ -45,6 +45,11 @@
                     <form method="POST" enctype="multipart/form-data" id="helperForm" class="needs-validation" novalidate>
                         {{ form.hidden_tag() }}
                         
+                        <div class="mb-3" style="display: none;">
+                            {{ form.helper_id.label(class="form-label") }}
+                            {{ form.helper_id(class="form-control", id="helper_id") }}
+                        </div>
+                        
                         <div class="mb-3">
                             {{ form.name.label(class="form-label") }}
                             {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Enter helper's full name") }}
@@ -72,13 +77,13 @@
                         <!-- Conditional fields based on helper type -->
                         <div class="mb-3 maid-field">
                             {{ form.aadhar_id.label(class="form-label") }}
-                            {{ form.aadhar_id(class="form-control", placeholder="Enter 12-digit Aadhaar number") }}
+                            {{ form.aadhar_id(class="form-control", id="aadhar_id", placeholder="Enter 12-digit Aadhaar number") }}
                             <div class="form-text">Enter the helper's Aadhaar number (12 digits)</div>
                         </div>
                         
                         <div class="mb-3 driver-field d-none">
                             {{ form.driving_license_id.label(class="form-label") }}
-                            {{ form.driving_license_id(class="form-control", placeholder="Enter driving license ID") }}
+                            {{ form.driving_license_id(class="form-control", id="driving_license_id", placeholder="Enter driving license ID") }}
                             <div class="form-text">Enter the helper's driving license ID</div>
                         </div>
                         
@@ -96,6 +101,18 @@
                         </div>
                         
                         <div class="mb-3">
+                            {{ form.gender.label(class="form-label") }}
+                            {{ form.gender(class="form-select" + (" is-invalid" if form.gender.errors else "")) }}
+                            {% if form.gender.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.gender.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
                             {{ form.languages.label(class="form-label") }}
                             {{ form.languages(class="form-select" + (" is-invalid" if form.languages.errors else "")) }}
                             {% if form.languages.errors %}
@@ -110,7 +127,7 @@
                         
                         <div class="mb-4">
                             {{ form.photo.label(class="form-label") }}
-                            {{ form.photo(class="form-control" + (" is-invalid" if form.photo.errors else "")) }}
+                            {{ form.photo(class="form-control" + (" is-invalid" if form.photo.errors else ""), id="helperPhoto") }}
                             {% if form.photo.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.photo.errors %}
@@ -118,7 +135,7 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
-                            <div class="form-text">Upload a clear photo of the helper (optional)</div>
+                            <div class="form-text">Upload a clear photo of the helper (JPG, JPEG or PNG, max 2MB)</div>
                         </div>
                         
                         <div class="alert alert-info mb-4">
@@ -127,7 +144,7 @@
                         </div>
                         
                         <div class="d-grid gap-2">
-                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            <button type="button" id="submitBtn" class="btn btn-primary btn-lg">Register Helper</button>
                         </div>
                     </form>
                 </div>
@@ -138,14 +155,32 @@
 
 {% block extra_js %}
 <script>
-    // Toggle appropriate ID field based on helper type
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM Loaded - Initializing form handling');
+        
+        // Get references to form elements
         const helperTypeSelect = document.getElementById('helper_type');
         const maidFields = document.querySelectorAll('.maid-field');
         const driverFields = document.querySelectorAll('.driver-field');
+        const form = document.getElementById('helperForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const aadharField = document.getElementById('aadhar_id');
+        const drivingLicenseField = document.getElementById('driving_license_id');
+        const helperIdField = document.getElementById('helper_id');
+        
+        // Verify all elements exist
+        if (!form) console.error('Form not found');
+        if (!submitBtn) console.error('Submit button not found');
+        if (!helperTypeSelect) console.error('Helper type select not found');
+        if (!aadharField) console.error('Aadhar field not found');
+        if (!drivingLicenseField) console.error('Driving license field not found');
+        if (!helperIdField) console.error('Helper ID field not found');
         
         function toggleFields() {
+            if (!helperTypeSelect) return;
+            
             const helperType = helperTypeSelect.value;
+            console.log('Toggling fields for helper type:', helperType);
             
             if (helperType === 'maid') {
                 maidFields.forEach(field => field.classList.remove('d-none'));
@@ -160,7 +195,76 @@
         toggleFields();
         
         // Toggle when selection changes
-        helperTypeSelect.addEventListener('change', toggleFields);
+        if (helperTypeSelect) {
+            helperTypeSelect.addEventListener('change', toggleFields);
+        }
+        
+        // Auto-populate helper_id based on selected ID
+        if (aadharField && helperIdField) {
+            aadharField.addEventListener('input', function() {
+                if (helperTypeSelect && helperTypeSelect.value === 'maid') {
+                    console.log('Updating helper_id with aadhar value:', this.value);
+                    helperIdField.value = this.value;
+                }
+            });
+        }
+        
+        if (drivingLicenseField && helperIdField) {
+            drivingLicenseField.addEventListener('input', function() {
+                if (helperTypeSelect && helperTypeSelect.value === 'driver') {
+                    console.log('Updating helper_id with driving license value:', this.value);
+                    helperIdField.value = this.value;
+                }
+            });
+        }
+        
+        // Change listener for helper type to update which ID is copied
+        if (helperTypeSelect && helperIdField) {
+            helperTypeSelect.addEventListener('change', function() {
+                if (this.value === 'maid' && aadharField) {
+                    console.log('Helper type changed to maid, updating helper_id');
+                    helperIdField.value = aadharField.value;
+                } else if (this.value === 'driver' && drivingLicenseField) {
+                    console.log('Helper type changed to driver, updating helper_id');
+                    helperIdField.value = drivingLicenseField.value;
+                }
+            });
+        }
+
+        // Handle form submission
+        if (form && submitBtn) {
+            submitBtn.addEventListener('click', function(event) {
+                console.log('Submit button clicked');
+                
+                // Update helper_id one last time before submission
+                if (helperTypeSelect && helperIdField) {
+                    if (helperTypeSelect.value === 'maid' && aadharField) {
+                        helperIdField.value = aadharField.value;
+                    } else if (helperTypeSelect.value === 'driver' && drivingLicenseField) {
+                        helperIdField.value = drivingLicenseField.value;
+                    }
+                }
+                
+                console.log('Final helper_id value:', helperIdField ? helperIdField.value : 'field not found');
+                
+                try {
+                    // Log all form data before submission
+                    if (window.FormData) {
+                        const formData = new FormData(form);
+                        console.log('Form data being submitted:');
+                        for (let pair of formData.entries()) {
+                            console.log(pair[0] + ': ' + pair[1]);
+                        }
+                    }
+                    
+                    // Submit the form
+                    form.submit();
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    alert('There was an error submitting the form. Please try again.');
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

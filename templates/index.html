@@ -3,371 +3,471 @@
 {% block title %}HouseHelpNetwork - India's First Peer-Verified Household Help Platform{% endblock %}
 
 {% block content %}
-<!-- Hero Story Section -->
-<section class="hero py-5">
-  <div class="container">
-    <div class="row align-items-center">
-      <div class="col-lg-6">
-        <h1 class="display-5 mb-4 text-white fw-bold animate__animated animate__fadeIn">"Sita Didi called: 'I can't come back.' And suddenly, your world paused."</h1>
-        <p class="lead mb-3 text-white-80 animate__animated animate__fadeIn animate__delay-1s">You've spent weeks mentoring her—showing her your kitchen, teaching her how you like things done, sharing recipes that make your home sing. Yet one day, the phone rings. No show tomorrow. No explanation.</p>
-        <p class="lead mb-3 text-white-80 animate__animated animate__fadeIn animate__delay-2s">That sinking feeling—that knot in your stomach—knows every mother's fear: who will step in? Who can you trust with your home and your child?</p>
-        <div class="animate__animated animate__fadeInUp animate__delay-3s">
-          {% if current_user.is_authenticated %}
-            <a href="{{ url_for('search') }}" class="btn btn-light btn-lg me-3 shadow-hover">Check Helper History</a>
-            <a href="{{ url_for('create_helper') }}" class="btn btn-secondary btn-lg shadow-hover">Share Your Experience</a>
-          {% else %}
-            <a href="{{ url_for('register') }}" class="btn btn-light btn-lg me-3 shadow-hover">Join Our Community</a>
-            <a href="{{ url_for('login') }}" class="btn btn-secondary btn-lg shadow-hover">Log In</a>
-          {% endif %}
-        </div>
-      </div>
-              <div class="col-lg-6 d-none d-lg-block text-center animate__animated animate__fadeInRight">
-        <img src="{{ url_for('static', filename='images/hero-story.png') }}" alt="Woman worried at door with child" class="img-fluid rounded shadow">
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Introduction Section -->
-<section class="container py-5">
-    <div class="text-center mb-5">
-        <h2 class="display-6 fw-bold">Peace of Mind, Built by Your Community.</h2>
-        <p class="lead text-muted">Finding reliable household help in India can be a lonely struggle. HouseHelpNetwork brings owners together, sharing experiences to build collective trust.</p>
-    </div>
-    <div class="row align-items-stretch">
-        <div class="col-lg-7 mb-4 mb-lg-0 d-flex flex-column">
-            <div>
-                <h3 class="fw-bold mb-4">The All-Too-Familiar Struggle We All Face...</h3>
-                <p class="mb-4">As homeowners, we want the best for our families, but the search for dependable help often leads to shared uncertainties and frustrations:</p>
+<!-- Hero Section -->
+<section class="hero-section py-5">
+    <div class="container">
+        <div class="row align-items-center min-vh-75">
+            <div class="col-lg-6">
+                <h1 class="display-3 mb-4 fw-bold text-dark">Making household help <span class="text-primary-purple">trustworthy</span>.</h1>
+                <p class="lead mb-4 text-muted">Fusing the power of community with the science of verification to create India's most trusted household help network.</p>
+                <div class="d-flex gap-3">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('search_helper') }}" class="btn btn-primary-purple btn-lg">Find Help</a>
+                        <a href="{{ url_for('create_helper') }}" class="btn btn-outline-purple btn-lg">Share Experience</a>
+                    {% else %}
+                        <a href="{{ url_for('register') }}" class="btn btn-primary-purple btn-lg">Join Free</a>
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-purple btn-lg">Log In</a>
+                    {% endif %}
+                </div>
             </div>
-            <ul class="list-unstyled mb-0">
-                <li class="mb-3 d-flex align-items-start">
-                    <i class="fas fa-question-circle text-primary-purple fa-lg me-3 mt-1"></i>
-                    <div><strong>The Guessing Game:</strong> No centralized verification means you're often unsure who you're truly inviting into your home.</div>
-                </li>
-                <li class="mb-3 d-flex align-items-start">
-                    <i class="fas fa-user-secret text-primary-purple fa-lg me-3 mt-1"></i>
-                    <div><strong>Hidden Stories & Surprises:</strong> Limited background information can hide past issues, leading to unsettling discoveries later.</div>
-                </li>
-                <li class="mb-3 d-flex align-items-start">
-                    <i class="fas fa-ghost text-primary-purple fa-lg me-3 mt-1"></i>
-                    <div><strong>The Vanishing Act:</strong> Dealing with high unreliability and the frustration of helpers who disappear without a word.</div>
-                </li>
-                <li class="mb-3 d-flex align-items-start">
-                    <i class="fas fa-wrench text-primary-purple fa-lg me-3 mt-1"></i>
-                    <div><strong>The Skill Mismatch:</strong> Facing significant skill gaps that don't align with your household's specific needs and standards.</div>
-                </li>
-            </ul>
-        </div>
-        <div class="col-lg-5 d-flex flex-column">
-            <div class="card shadow-sm border-0 p-4 reveal-card h-100" style="background-color: #f8f9fa;">
-                 <h3 class="fw-bold mb-3 text-success"><i class="fas fa-users me-2"></i>Our Collective Solution: A Network of Trust</h3>
-                <p class="mb-3">HouseHelpNetwork is built by owners, for owners. We empower each other through:</p>
-                <ul class="list-unstyled mb-0">
-                    <li class="mb-3 d-flex align-items-start">
-                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
-                        <div><strong>Peer-Verified Profiles & Skills:</strong> Access helper profiles vetted by fellow owners, with honest skill assessments and shared feedback.</div>
-                    </li>
-                    <li class="mb-3 d-flex align-items-start">
-                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
-                        <div><strong>Shared Work Histories:</strong> View transparent work records and genuine performance reviews contributed by other verified members of our community.</div>
-                    </li>
-                    <li class="mb-3 d-flex align-items-start">
-                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
-                        <div><strong>Direct Owner-to-Owner Connections:</strong> Securely and privately connect with other owners for direct references and invaluable first-hand insights.</div>
-                    </li>
-                    <li class="mb-3 d-flex align-items-start">
-                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
-                        <div><strong>Community-Driven Safety:</strong> Our incident reporting system, managed by the community, ensures a trustworthy and accountable network for everyone.</div>
-                    </li>
-                </ul>
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="hero-image-wrapper">
+                    <img src="{{ url_for('static', filename='images/hero-custom.png') }}" alt="Indian family welcoming household helper, trust and comfort" class="img-fluid rounded-4 shadow-lg">
+                    <div class="floating-card">
+                        <div class="d-flex align-items-center">
+                            <div class="trust-badge me-3">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Verified Helper</h6>
+                                <small class="text-muted">100% Trust Score</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="text-center mt-5">
-         <p class="lead fw-medium">Join our community at HouseHelpNetwork today. Let's transform the anxiety of hiring into the collective assurance of trusted, peer-verified help.</p>
     </div>
 </section>
 
-<!-- Navigation Cards -->
-<section class="container mt-n5 mb-5 position-relative z-index-100">
-  <div class="row justify-content-center">
-    <div class="col-md-10">
-      <div class="card shadow border-0 animate__animated animate__fadeInUp">
-        <div class="card-body p-0">
-          <div class="row g-0">
-            <div class="col-md-3 text-center p-4 border-end hover-bg-light">
-              <a href="{{ url_for('search') }}" class="text-decoration-none">
-                <div class="icon-circle mb-3 mx-auto bg-light-purple">
-                  <i class="fas fa-history fa-2x text-primary-purple"></i>
+<!-- Why Section -->
+<section class="why-section py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <div class="story-image-wrapper">
+                    <img src="{{ url_for('static', filename='images/worried-lady.png') }}" alt="Worried lady in kitchen, helper absent, sunlight streaming in" class="img-fluid rounded-4 shadow-lg">
+                    <div class="quote-card">
+                        <i class="fas fa-quote-left text-primary-purple mb-3"></i>
+                        <p class="mb-0">"The right help transforms not just your home, but your life."</p>
+                    </div>
                 </div>
-                <h5 class="mb-2">View History</h5>
-                <p class="small text-muted mb-0">Complete employment records</p>
-              </a>
             </div>
-            <div class="col-md-3 text-center p-4 border-end hover-bg-light">
-              <a href="{{ url_for('create_helper') }}" class="text-decoration-none">
-                <div class="icon-circle mb-3 mx-auto bg-light-purple">
-                  <i class="fas fa-star fa-2x text-primary-purple"></i>
+            <div class="col-lg-6">
+                <div class="why-content">
+                    <h2 class="display-5 fw-bold mb-4">Why We <span class="text-primary-purple">Exist</span></h2>
+                    <div class="story-block mb-4">
+                        <p class="lead text-muted">Picture this: You've spent weeks mentoring your helper—showing her your kitchen, teaching her your family's preferences, sharing the little things that make your home special.</p>
+                        <p class="lead text-muted">Then one day, the phone rings. "I can't come back." No explanation. No warning.</p>
+                    </div>
+                    <div class="challenge-block mb-4">
+                        <h3 class="h4 mb-3">The Reality We All Face</h3>
+                        <ul class="list-unstyled">
+                            <li class="d-flex mb-3">
+                                <div class="challenge-icon me-3">
+                                    <i class="fas fa-question-circle text-primary-purple"></i>
+                                </div>
+                                <div>
+                                    <strong>The Uncertainty</strong>
+                                    <p class="text-muted mb-0">No centralized verification means you're often unsure who you're truly inviting into your home.</p>
+                                </div>
+                            </li>
+                            <li class="d-flex mb-3">
+                                <div class="challenge-icon me-3">
+                                    <i class="fas fa-user-secret text-primary-purple"></i>
+                                </div>
+                                <div>
+                                    <strong>The Hidden Stories</strong>
+                                    <p class="text-muted mb-0">Limited background information can hide past issues, leading to unsettling discoveries later.</p>
+                                </div>
+                            </li>
+                            <li class="d-flex">
+                                <div class="challenge-icon me-3">
+                                    <i class="fas fa-wrench text-primary-purple"></i>
+                                </div>
+                                <div>
+                                    <strong>The Skill Gap</strong>
+                                    <p class="text-muted mb-0">Finding someone whose skills align with your household's specific needs and standards.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-                <h5 class="mb-2">Share Reviews</h5>
-                <p class="small text-muted mb-0">Help other families</p>
-              </a>
             </div>
-            <div class="col-md-3 text-center p-4 border-end hover-bg-light">
-              <a href="{{ url_for('profile') }}" class="text-decoration-none">
-                <div class="icon-circle mb-3 mx-auto bg-light-purple">
-                  <i class="fas fa-id-card fa-2x text-primary-purple"></i>
-                </div>
-                <h5 class="mb-2">Verify Identity</h5>
-                <p class="small text-muted mb-0">Confirm who you're trusting</p>
-              </a>
-            </div>
-            <div class="col-md-3 text-center p-4 hover-bg-light">
-              <a href="{{ url_for('aadhaar_verification') }}" class="text-decoration-none">
-                <div class="icon-circle mb-3 mx-auto bg-light-purple">
-                  <i class="fas fa-check-circle fa-2x text-primary-purple"></i>
-                </div>
-                <h5 class="mb-2">Aadhaar Security</h5>
-                <p class="small text-muted mb-0">Government-verified IDs</p>
-              </a>
-            </div>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
 </section>
 
-<!-- Final CTA -->
-<section class="text-center py-5 bg-primary-purple text-white position-relative">
-  <div class="cta-wave"></div>
-  <div class="container py-4">
-    <h2 class="mb-3 display-6">Turn Anxiety into Collective Assurance</h2>
-    <p class="lead mb-4">Join hundreds of families helping each other build a safer, more reliable household help network, together.</p>
-    <div class="d-flex justify-content-center flex-wrap">
-      {% if current_user.is_authenticated %}
-        <a href="{{ url_for('search') }}" class="btn btn-light btn-lg me-3 mb-3 shadow-hover pulse-button">Check Helper History</a>
-        <a href="{{ url_for('create_helper') }}" class="btn btn-outline-light btn-lg mb-3 shadow-hover">Share Your Experience</a>
-      {% else %}
-        <a href="{{ url_for('register') }}" class="btn btn-light btn-lg me-3 mb-3 shadow-hover pulse-button">Join Free Now</a>
-        <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg mb-3 shadow-hover">Log In</a>
-      {% endif %}
+<!-- Story Section -->
+<section class="story-section py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center mb-5">
+                <h2 class="display-5 fw-bold mb-4">How we nourish our homes shapes <span class="text-primary-purple">who we are</span>.</h2>
+                <p class="lead text-muted">Explore how becoming informed and inspired in finding household help can transform your family's life. Through trust, community, and beautiful experiences, how we choose to support our homes shapes who we will become.</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-image-wrapper">
+                        <img src="{{ url_for('static', filename='images/community.png') }}" alt="Indian families and helpers in a community park, supportive and friendly" class="card-img-top">
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="icon-wrapper mb-4">
+                            <i class="fas fa-users fa-2x text-primary-purple"></i>
+                        </div>
+                        <h3 class="h4 mb-3">Community Trust</h3>
+                        <p class="text-muted">Join a network of families helping each other build a safer, more reliable household help ecosystem.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-image-wrapper">
+                        <img src="{{ url_for('static', filename='images/verified.png') }}" alt="Helper and homeowner reviewing ID documents, modern home, relaxed" class="card-img-top">
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="icon-wrapper mb-4">
+                            <i class="fas fa-shield-alt fa-2x text-primary-purple"></i>
+                        </div>
+                        <h3 class="h4 mb-3">Verified Safety</h3>
+                        <p class="text-muted">Government-verified identities and community-driven background checks ensure your family's security.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-image-wrapper">
+                        <img src="{{ url_for('static', filename='images/quality.png') }}" alt="Helper and child doing crafts, parent watching fondly, joyful home" class="card-img-top">
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="icon-wrapper mb-4">
+                            <i class="fas fa-star fa-2x text-primary-purple"></i>
+                        </div>
+                        <h3 class="h4 mb-3">Quality Assurance</h3>
+                        <p class="text-muted">Peer-reviewed skills and transparent work histories help you find the perfect match for your home.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <div class="features-image-wrapper">
+                    <img src="{{ url_for('static', filename='images/hero-family.png') }}" alt="Family and helper trust journey" class="img-fluid rounded-4 shadow-lg">
+                    <div class="floating-stats">
+                        <div class="stat-item">
+                            <h3 class="mb-0">10K+</h3>
+                            <p class="text-muted mb-0">Verified Helpers</p>
+                        </div>
+                        <div class="stat-item">
+                            <h3 class="mb-0">98%</h3>
+                            <p class="text-muted mb-0">Success Rate</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <h2 class="display-5 fw-bold mb-4">Your Trust Journey <span class="text-primary-purple">Starts Here</span></h2>
+                <div class="feature-list">
+                    <div class="feature-item d-flex mb-4">
+                        <div class="feature-icon me-3">
+                            <i class="fas fa-check-circle fa-2x text-primary-purple"></i>
+                        </div>
+                        <div>
+                            <h4 class="h5 mb-2">Complete Verification</h4>
+                            <p class="text-muted mb-0">Government-verified identities and community-driven background checks.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item d-flex mb-4">
+                        <div class="feature-icon me-3">
+                            <i class="fas fa-history fa-2x text-primary-purple"></i>
+                        </div>
+                        <div>
+                            <h4 class="h5 mb-2">Work History</h4>
+                            <p class="text-muted mb-0">Transparent employment records and performance reviews.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item d-flex">
+                        <div class="feature-icon me-3">
+                            <i class="fas fa-comments fa-2x text-primary-purple"></i>
+                        </div>
+                        <div>
+                            <h4 class="h5 mb-2">Direct Connections</h4>
+                            <p class="text-muted mb-0">Connect with other owners for references and insights.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section py-5 bg-primary-purple text-white">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <h2 class="display-5 fw-bold mb-4">Join Our Community Today</h2>
+                <p class="lead mb-4">Be part of India's most trusted household help network. Together, we're making homes safer and happier.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('search_helper') }}" class="btn btn-light btn-lg">Find Help</a>
+                        <a href="{{ url_for('create_helper') }}" class="btn btn-outline-light btn-lg">Share Experience</a>
+                    {% else %}
+                        <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">Join Free</a>
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">Log In</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </section>
 {% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 <style>
-  .text-white-80 {
-    color: rgba(255, 255, 255, 0.8);
-  }
-  
-  .position-relative {
-    position: relative;
-  }
-  
-  .z-index-100 {
-    z-index: 100;
-  }
-  
-  .mt-n5 {
-    margin-top: -3rem;
-  }
-  
-  .bg-primary-purple {
-    background-color: var(--primary-purple);
-  }
-  
-  .bg-light-purple {
-    background-color: rgba(128, 0, 128, 0.1);
-    transition: all 0.3s ease;
-  }
-  
-  .card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    overflow: hidden;
-  }
-  
-  .card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-medium);
-  }
-  
-  .icon-circle {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-  }
-  
-  .hover-bg-light:hover {
-    background-color: rgba(128, 0, 128, 0.05);
-  }
-  
-  .hover-bg-light:hover .icon-circle {
-    background-color: rgba(128, 0, 128, 0.2);
-  }
-  
-  .shadow-hover {
-    transition: all 0.3s ease;
-  }
-  
-  .shadow-hover:hover {
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
-    transform: translateY(-3px);
-  }
-  
-  .card-decoration {
-    position: absolute;
-    top: -30px;
-    right: -30px;
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    z-index: 0;
-  }
-  
-  .opacity-10 {
-    opacity: 0.1;
-  }
-  
-  .opacity-15 {
-    opacity: 0.15;
-  }
-  
-  .section-title {
-    display: inline-block;
-    position: relative;
-    margin-bottom: 30px;
-  }
-  
-  .section-title:after {
-    content: '';
-    position: absolute;
-    width: 100px;
-    height: 3px;
-    background-color: var(--primary-purple);
-    bottom: -10px;
-    left: calc(50% - 50px);
-  }
-  
-  .step-card {
-    position: relative;
-    padding-top: 20px;
-  }
-  
-  .step-number {
-    position: absolute;
-    top: -15px;
-    right: 20px;
-    background-color: var(--primary-purple);
-    color: white;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-  }
-  
-  .testimonial-card {
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .quote-mark {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    opacity: 0.1;
-  }
-  
-  .section-wave {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 10px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z' opacity='.25' fill='%23800080'%3E%3C/path%3E%3C/svg%3E");
-    background-size: cover;
-  }
-  
-  .cta-wave {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 20px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z' opacity='.25' fill='white'%3E%3C/path%3E%3C/svg%3E");
-    background-size: cover;
-    transform: rotate(180deg);
-  }
-  
-  .pulse-button {
-    animation: pulse 2s infinite;
-  }
-  
-  @keyframes pulse {
-    0% {
-      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+    :root {
+        --primary-purple: #6B4EFF;
+        --secondary-purple: #8A7AFF;
+        --light-purple: #F0EDFF;
     }
-    70% {
-      box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
-    }
-  }
-  
-  .reveal-card {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-  }
-  
-  /* For mobile responsiveness */
-  @media (max-width: 768px) {
-    .mt-n5 {
-      margin-top: -1.5rem;
-    }
-    
-    .icon-circle {
-      width: 50px;
-      height: 50px;
-    }
-    
-    .icon-circle i {
-      font-size: 1.2rem !important;
-    }
-  }
-</style>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Reveal cards on scroll
-    const cards = document.querySelectorAll('.reveal-card');
-    
-    const revealCard = function() {
-      cards.forEach(card => {
-        const cardTop = card.getBoundingClientRect().top;
-        const triggerBottom = window.innerHeight * 0.8;
-        
-        if(cardTop < triggerBottom) {
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
+    .hero-section {
+        background-color: #fff;
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        padding-bottom: 0.5rem;
+    }
+
+    .min-vh-75 {
+        min-height: 75vh;
+    }
+
+    .hero-image-wrapper {
+        position: relative;
+    }
+
+    .floating-card {
+        position: absolute;
+        bottom: -20px;
+        right: -20px;
+        background: white;
+        padding: 1rem;
+        border-radius: 1rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .trust-badge {
+        width: 40px;
+        height: 40px;
+        background-color: var(--light-purple);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-purple);
+    }
+
+    .card-image-wrapper {
+        height: 200px;
+        overflow: hidden;
+        border-radius: 1rem 1rem 0 0;
+    }
+
+    .card-image-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover .card-image-wrapper img {
+        transform: scale(1.05);
+    }
+
+    .features-image-wrapper {
+        position: relative;
+    }
+
+    .floating-stats {
+        position: absolute;
+        bottom: -30px;
+        right: -30px;
+        background: white;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        display: flex;
+        gap: 2rem;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-item h3 {
+        color: var(--primary-purple);
+        font-weight: bold;
+    }
+
+    .btn-primary-purple {
+        background-color: var(--primary-purple);
+        border-color: var(--primary-purple);
+        color: white;
+    }
+
+    .btn-primary-purple:hover {
+        background-color: var(--secondary-purple);
+        border-color: var(--secondary-purple);
+        color: white;
+    }
+
+    .btn-outline-purple {
+        color: var(--primary-purple);
+        border-color: var(--primary-purple);
+    }
+
+    .btn-outline-purple:hover {
+        background-color: var(--primary-purple);
+        color: white;
+    }
+
+    .icon-wrapper {
+        width: 60px;
+        height: 60px;
+        background-color: var(--light-purple);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+
+    .feature-icon {
+        width: 50px;
+        height: 50px;
+        background-color: var(--light-purple);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bg-primary-purple {
+        background-color: var(--primary-purple) !important;
+    }
+
+    .text-primary-purple {
+        color: var(--primary-purple) !important;
+    }
+
+    .rounded-4 {
+        border-radius: 1rem !important;
+    }
+
+    .shadow-lg {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    }
+
+    @media (max-width: 768px) {
+        .floating-card,
+        .floating-stats {
+            display: none;
         }
-      });
-    };
-    
-    window.addEventListener('scroll', revealCard);
-    revealCard(); // Initial check
-  });
-</script>
+    }
+
+    .why-section {
+        background-color: #fff;
+        position: relative;
+        overflow: hidden;
+        padding-top: 1.5rem !important;
+        margin-top: -1rem;
+    }
+
+    .story-image-wrapper {
+        position: relative;
+    }
+
+    .quote-card {
+        position: absolute;
+        bottom: -30px;
+        right: -30px;
+        background: rgba(255,255,255,0.7);
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        max-width: 300px;
+    }
+
+    .quote-card i {
+        font-size: 2rem;
+    }
+
+    .quote-card p {
+        color: var(--primary-purple);
+        font-weight: 600;
+    }
+
+    .story-block {
+        position: relative;
+        padding-left: 1.5rem;
+        border-left: 3px solid var(--primary-purple);
+    }
+
+    .challenge-icon {
+        width: 40px;
+        height: 40px;
+        background-color: var(--light-purple);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .challenge-icon i {
+        font-size: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+        .quote-card {
+            display: none;
+        }
+    }
+
+    .story-section {
+        padding-top: 3rem !important;
+        margin-top: -1rem;
+    }
+
+    .why-content h2 {
+        color: #212529; /* Bootstrap's text-dark */
+        font-weight: 700;
+        border-left: 4px solid var(--primary-purple);
+        padding-left: 1rem;
+        margin-bottom: 2rem;
+        display: inline-block;
+    }
+
+    .story-section h2 {
+        color: #212529; /* Bootstrap's text-dark */
+        font-weight: 700;
+    }
+</style>
 {% endblock %}

@@ -1,0 +1,138 @@
+{% extends "layout.html" %}
+
+{% block title %}Contract Details - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <a href="{{ url_for('owner_dashboard') }}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Contract Details</h3>
+                    <span class="badge bg-primary">{{ contract.contract_id }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center">
+                            {% if helper.photo_url %}
+                                <img src="{{ helper.photo_url }}" alt="Helper Photo" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; background-color: var(--secondary-lavender);">
+                                    <i class="fas fa-user text-primary-purple fa-2x"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h5 class="mb-1">{{ helper.name }}</h5>
+                                <p class="mb-0 text-muted">{{ helper.helper_type|title }} | {{ helper.helper_id }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Contract Period</h5>
+                            <p><strong>Start Date:</strong> {{ contract.start_date.strftime('%d %b, %Y') }}</p>
+                            <p>
+                                <strong>End Date:</strong> 
+                                {% if contract.end_date %}
+                                    {{ contract.end_date.strftime('%d %b, %Y') }}
+                                {% else %}
+                                    <span class="text-success">Ongoing</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Work Schedule</h5>
+                            {% if contract.is_full_time %}
+                                <p><strong>Type:</strong> <span class="badge bg-success">Full Time</span></p>
+                            {% else %}
+                                <p><strong>Type:</strong> <span class="badge bg-info">Part Time</span></p>
+                                <p><strong>Working Hours:</strong> {{ contract.working_hours_from }} to {{ contract.working_hours_to }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Compensation</h5>
+                        <p><strong>Monthly Salary:</strong> ₹{{ contract.monthly_salary }}</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Agreed Tasks</h5>
+                        {% if tasks_by_category %}
+                            <div class="accordion" id="taskAccordion">
+                                {% for category, tasks in tasks_by_category.items() %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="true" aria-controls="collapse{{ loop.index }}">
+                                            {{ category }}
+                                        </button>
+                                    </h2>
+                                    <div id="collapse{{ loop.index }}" class="accordion-collapse collapse show" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#taskAccordion">
+                                        <div class="accordion-body">
+                                            <ul class="list-group list-group-flush">
+                                                {% for task in tasks %}
+                                                    <li class="list-group-item">{{ task.name }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No specific tasks listed.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-user me-1"></i> View Helper Profile
+                        </a>
+                        
+                        {% if contract.is_terminated %}
+                            <span class="badge bg-danger py-2 px-3">Contract Terminated</span>
+                        {% else %}
+                            <a href="{{ url_for('terminate_contract', contract_id=contract.contract_id) }}" class="btn btn-outline-danger">
+                                <i class="fas fa-times-circle me-1"></i> Terminate Contract
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Sidebar content like payment history, etc. can be added here in the future -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Contract Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Created On:</strong> {{ contract.created_at.strftime('%d %b, %Y') }}</p>
+                    
+                    {% if contract.is_terminated %}
+                    <div class="alert alert-danger mb-3">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Contract Terminated</h6>
+                        <hr>
+                        <p class="mb-0"><strong>Reason:</strong> {{ contract.termination_reason }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <hr>
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        This contract serves as a formal agreement between you and the helper. Keep a copy for your records.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,262 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Aadhaar API Logs - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Aadhaar API Logs</h1>
+    
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Logs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_logs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-database fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Success Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "%.2f"|format(success_rate) }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">OTP Generations</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ generate_otp_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-sms fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">OTP Verifications</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ verify_otp_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-fingerprint fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Logs</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row">
+                <div class="col-md-2 mb-3">
+                    <label for="type">Request Type</label>
+                    <select class="form-control" id="type" name="type">
+                        <option value="">All Types</option>
+                        <option value="token" {% if request_type == 'token' %}selected{% endif %}>Auth Token</option>
+                        <option value="generate_otp" {% if request_type == 'generate_otp' %}selected{% endif %}>Generate OTP</option>
+                        <option value="verify_otp" {% if request_type == 'verify_otp' %}selected{% endif %}>Verify OTP</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2 mb-3">
+                    <label for="status">Status</label>
+                    <select class="form-control" id="status" name="status">
+                        <option value="">All</option>
+                        <option value="success" {% if status == 'success' %}selected{% endif %}>Success</option>
+                        <option value="failure" {% if status == 'failure' %}selected{% endif %}>Failure</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2 mb-3">
+                    <label for="aadhaar_id">Aadhaar ID</label>
+                    <input type="text" class="form-control" id="aadhaar_id" name="aadhaar_id" value="{{ aadhaar_id or '' }}" placeholder="12-digit number">
+                </div>
+                
+                <div class="col-md-2 mb-3">
+                    <label for="reference_id">Reference ID</label>
+                    <input type="text" class="form-control" id="reference_id" name="reference_id" value="{{ reference_id or '' }}" placeholder="Reference ID">
+                </div>
+                
+                <div class="col-md-2 mb-3">
+                    <label for="from_date">From Date</label>
+                    <input type="date" class="form-control" id="from_date" name="from_date" value="{{ from_date or '' }}">
+                </div>
+                
+                <div class="col-md-2 mb-3">
+                    <label for="to_date">To Date</label>
+                    <input type="date" class="form-control" id="to_date" name="to_date" value="{{ to_date or '' }}">
+                </div>
+                
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ url_for('admin_aadhaar_logs') }}" class="btn btn-secondary">Clear Filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Logs Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">API Logs</h6>
+            <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                    <div class="dropdown-header">Export Options:</div>
+                    <a class="dropdown-item" href="#">Export to CSV</a>
+                    <a class="dropdown-item" href="#">Export to JSON</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Timestamp</th>
+                            <th>Request Type</th>
+                            <th>Aadhaar ID</th>
+                            <th>Reference ID</th>
+                            <th>Status</th>
+                            <th>Error Message</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.id }}</td>
+                            <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                {% if log.request_type == 'token' %}
+                                <span class="badge badge-info">Auth Token</span>
+                                {% elif log.request_type == 'generate_otp' %}
+                                <span class="badge badge-primary">Generate OTP</span>
+                                {% elif log.request_type == 'verify_otp' %}
+                                <span class="badge badge-warning">Verify OTP</span>
+                                {% else %}
+                                <span class="badge badge-secondary">{{ log.request_type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.aadhaar_id %}
+                                {{ log.aadhaar_id }}
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.reference_id %}
+                                <span class="text-monospace">{{ log.reference_id }}</span>
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.success %}
+                                <span class="badge badge-success">Success</span>
+                                {% else %}
+                                <span class="badge badge-danger">Failed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.error_message %}
+                                <span class="text-danger">{{ log.error_message|truncate(50) }}</span>
+                                {% else %}
+                                <span class="text-muted">None</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('aadhaar_log_detail', log_id=log.id) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-search"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin_aadhaar_logs', page=pagination.prev_num, type=request_type, status=status, aadhaar_id=aadhaar_id, reference_id=reference_id, from_date=from_date, to_date=to_date) }}">Previous</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == pagination.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }} <span class="sr-only">(current)</span></span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin_aadhaar_logs', page=page_num, type=request_type, status=status, aadhaar_id=aadhaar_id, reference_id=reference_id, from_date=from_date, to_date=to_date) }}">{{ page_num }}</a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin_aadhaar_logs', page=pagination.next_num, type=request_type, status=status, aadhaar_id=aadhaar_id, reference_id=reference_id, from_date=from_date, to_date=to_date) }}">Next</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

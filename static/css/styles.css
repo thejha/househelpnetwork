@@ -4,7 +4,7 @@
 :root {
     /* Primary Colors */
     --primary-pink: #FFC0CB;
-    --primary-purple: #800080;
+    --primary-purple: #6B4EFF;
     --primary-white: #FFFFFF;
     --primary-black: #000000;
     
@@ -33,13 +33,18 @@
     /* Shadows */
     --shadow-soft: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-medium: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+    
+    /* Global font and color variables */
+    --secondary-purple: #8A7AFF;
+    --light-purple: #F0EDFF;
+    --font-family-main: 'Manrope', Arial, sans-serif;
 }
 
 /* Base Styles */
-body {
-    font-family: var(--font-family);
+body, html {
+    font-family: var(--font-family-main) !important;
+    background-color: #fafbfc;
     font-weight: var(--body-weight);
-    background-color: var(--secondary-lavender);
     color: var(--primary-black);
     line-height: 1.6;
     margin: 0;
@@ -47,9 +52,9 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-family);
-    font-weight: var(--heading-weight);
-    color: var(--primary-purple);
+    font-family: var(--font-family-main) !important;
+    color: #212529;
+    font-weight: 700;
     margin-top: 0;
 }
 
@@ -59,8 +64,8 @@ a {
     transition: color 0.3s ease;
 }
 
-a:hover {
-    color: var(--primary-pink);
+a:hover, a:focus {
+    color: var(--secondary-purple);
 }
 
 /* Container */
@@ -75,6 +80,7 @@ a:hover {
     background-color: var(--primary-white);
     box-shadow: var(--shadow-soft);
     padding: var(--spacing-md) 0;
+    font-family: var(--font-family-main) !important;
 }
 
 .navbar-brand {
@@ -143,6 +149,31 @@ a:hover {
     border-color: #e1d6ff;
 }
 
+.btn-primary-purple {
+    background-color: var(--primary-purple) !important;
+    border-color: var(--primary-purple) !important;
+    color: #fff !important;
+    font-weight: 600;
+}
+
+.btn-primary-purple:hover, .btn-primary-purple:focus {
+    background-color: var(--secondary-purple) !important;
+    border-color: var(--secondary-purple) !important;
+    color: #fff !important;
+}
+
+.btn-outline-purple {
+    color: var(--primary-purple) !important;
+    border-color: var(--primary-purple) !important;
+    background: transparent !important;
+    font-weight: 600;
+}
+
+.btn-outline-purple:hover, .btn-outline-purple:focus {
+    background-color: var(--primary-purple) !important;
+    color: #fff !important;
+}
+
 /* Forms */
 .form-control {
     border-radius: var(--border-radius-lg);
@@ -162,11 +193,15 @@ a:hover {
     color: var(--primary-black);
 }
 
+.form-label, .form-control, .form-select {
+    font-family: var(--font-family-main) !important;
+}
+
 /* Cards */
 .card {
-    border-radius: var(--border-radius-2xl);
+    border-radius: 1rem !important;
+    box-shadow: 0 4px 16px rgba(107, 78, 255, 0.07);
     border: none;
-    box-shadow: var(--shadow-soft);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     overflow: hidden;
     margin-bottom: var(--spacing-lg);
@@ -178,9 +213,9 @@ a:hover {
 }
 
 .card-header {
-    background-color: var(--primary-purple);
-    color: var(--primary-white);
-    font-weight: var(--heading-weight);
+    background-color: var(--light-purple) !important;
+    color: var(--primary-purple) !important;
+    font-weight: 700;
     border-bottom: none;
     padding: var(--spacing-md) var(--spacing-lg);
 }
@@ -366,6 +401,7 @@ a:hover {
     color: var(--primary-white);
     padding: var(--spacing-xl) 0;
     margin-top: var(--spacing-xxl);
+    font-family: var(--font-family-main) !important;
 }
 
 .footer h4 {
@@ -421,6 +457,41 @@ a:hover {
     color: #FFD700;
 }
 
+/* Utility classes for spacing and backgrounds */
+.bg-light-purple {
+    background-color: var(--light-purple) !important;
+}
+
+/* Flash messages and alerts */
+.alert-info {
+    background-color: var(--light-purple) !important;
+    color: var(--primary-purple) !important;
+    border: none;
+}
+
+.alert-success {
+    background-color: #e6f7f1 !important;
+    color: #1e7e34 !important;
+    border: none;
+}
+
+.alert-warning {
+    background-color: #fff8e1 !important;
+    color: #856404 !important;
+    border: none;
+}
+
+.alert-danger {
+    background-color: #ffe6e6 !important;
+    color: #b71c1c !important;
+    border: none;
+}
+
+/* Inputs and selects */
+input, select, textarea {
+    font-family: var(--font-family-main) !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {
@@ -442,4 +513,9 @@ a:hover {
     .stat-card {
         flex: 1 0 100%;
     }
+}
+
+.features-section h2 {
+    color: #212529;
+    font-weight: 700;
 }

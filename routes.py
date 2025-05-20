@@ -1,15 +1,17 @@
 import os
 import uuid
 import datetime
+import time
 from functools import wraps
-from flask import render_template, url_for, flash, redirect, request, jsonify, session, send_from_directory
+from flask import render_template, url_for, flash, redirect, request, jsonify, session, send_from_directory, current_app
 from flask_login import login_user, current_user, logout_user, login_required
 from werkzeug.utils import secure_filename
 from extensions import db, bcrypt
-from models import User, OwnerProfile, OwnerDocument, HelperProfile, HelperDocument, TaskList, Contract, Review, IncidentReport, OwnerToOwnerConnect, PincodeMapping, Language
+from models import User, OwnerProfile, OwnerDocument, HelperProfile, HelperDocument, TaskList, Contract, Review, IncidentReport, OwnerToOwnerConnect, PincodeMapping, Language, OwnerHelperAssociation, HelperVerificationLog, AadhaarAPILog
 from forms import (RegistrationForm, LoginForm, OwnerProfileForm, HelperProfileForm, ContractForm, ReviewForm, 
                    IncidentReportForm, OwnerToOwnerConnectForm, SearchForm, TaskListForm,
-                   AadhaarVerificationForm, AadhaarOTPVerificationForm, AadhaarOTPForm, AadhaarRegistrationForm)
+                   AadhaarVerificationForm, AadhaarOTPVerificationForm, AadhaarOTPForm, AadhaarRegistrationForm,
+                   HelperAadhaarVerificationForm, CreateHelperForm, SearchHelperForm)
 from utils import save_file, get_unique_id, send_notification
 from aadhaar_api import generate_aadhaar_otp, verify_aadhaar_otp
 
@@ -24,6 +26,10 @@ def admin_required(f):
     return decorated_function
 
 def register_routes(app):
+    # Add route to serve uploaded files
+    @app.route('/uploads/<path:filename>')
+    def uploaded_file(filename):
+        return send_from_directory(os.path.join(current_app.root_path, current_app.config['UPLOAD_FOLDER']), filename)
     
     # Home route
     @app.route('/')
@@ -51,10 +57,26 @@ def register_routes(app):
         """Step 1: User enters Aadhaar number to start registration"""
         if current_user.is_authenticated:
             return redirect(url_for('index'))
-            
+        
+        # Clear any existing Aadhaar session data when starting a new registration
+        session.pop('aadhaar_data', None)
+        session.pop('aadhaar_id', None)
+        session.pop('aadhaar_reference_id', None)
+        session.pop('registration_flow', None)
+        
+        # Ensure we have a session ID for tracking
+        if 'session_id' not in session:
+            session['session_id'] = str(uuid.uuid4())
+        
         form = AadhaarVerificationForm()
         if form.validate_on_submit():
             aadhaar_id = form.aadhaar_id.data
+            
+            # Check if Aadhaar is already registered
+            existing_profile = OwnerProfile.query.filter_by(aadhaar_id=aadhaar_id).first()
+            if existing_profile:
+                form.aadhaar_id.errors.append('This Aadhaar number is already registered. Please use a different Aadhaar number or contact support if you believe this is an error.')
+                return render_template('register_aadhaar.html', form=form)
             
             # Call Aadhaar API to generate OTP
             response = generate_aadhaar_otp(aadhaar_id)
@@ -64,6 +86,10 @@ def register_routes(app):
                 session['aadhaar_reference_id'] = response["reference_id"]
                 session['aadhaar_id'] = aadhaar_id
                 session['registration_flow'] = True  # Mark that we're in registration flow
+                session.modified = True  # Force session update
+                
+                app.logger.info(f"OTP sent for Aadhaar verification: {aadhaar_id}, Reference ID: {response['reference_id']}")
+                app.logger.debug(f"Session data after OTP generation: aadhaar_id={session.get('aadhaar_id')}, reference_id={session.get('aadhaar_reference_id')}")
                 
                 flash(f'OTP sent to your registered mobile number. {response["message"]}', 'success')
                 return redirect(url_for('aadhaar_register_otp'))
@@ -74,29 +100,78 @@ def register_routes(app):
     
     @app.route('/register-aadhaar-otp', methods=['GET', 'POST'])
     def aadhaar_register_otp():
-        """Step 2: User enters OTP received for Aadhaar verification"""
+        """Step 2: User enters OTP received on mobile to verify Aadhaar"""
         # Check if we have a reference_id in the session
-        if 'aadhaar_reference_id' not in session or 'aadhaar_id' not in session or 'registration_flow' not in session:
+        if 'aadhaar_reference_id' not in session or 'aadhaar_id' not in session:
             flash('Please start the registration process again.', 'warning')
             return redirect(url_for('register_with_aadhaar'))
         
+        aadhaar_id = session.get('aadhaar_id')
+        reference_id = session.get('aadhaar_reference_id')
+        
+        # Log the current session state
+        app.logger.info(f"OTP verification for Aadhaar: {aadhaar_id}, Reference ID: {reference_id}")
+        
         form = AadhaarOTPForm()
+        form.reference_id.data = reference_id  # Pre-populate reference ID
         
         if form.validate_on_submit():
             otp = form.otp.data
-            reference_id = form.reference_id.data or session['aadhaar_reference_id']
             
             # Call Sandbox API to verify OTP
             response = verify_aadhaar_otp(reference_id, otp)
             
+            # Check if response contains the expected data
+            if not response:
+                app.logger.error("OTP verification returned empty response")
+                flash('An error occurred during verification. Please try again.', 'danger')
+                return render_template('verify_aadhaar_registration.html', form=form, reference_id=reference_id)
+            
+            # Extract error message if verification failed
+            error_msg = response.get("message", "Unknown error") if not response.get("success") else ""
+            
+            # Handle verification result
             if response["success"]:
                 # Store Aadhaar data in session for registration completion
-                session['aadhaar_data'] = response.get("user_details", {})
+                user_details = response.get("user_details", {})
+                
+                # Double-check if this Aadhaar ID is already registered
+                existing_profile = OwnerProfile.query.filter_by(aadhaar_id=aadhaar_id).first()
+                if existing_profile:
+                    flash('This Aadhaar number is already registered. Please use a different Aadhaar number or contact support.', 'danger')
+                    return redirect(url_for('register_with_aadhaar'))
+                
+                # Store the user details in the session
+                session['aadhaar_data'] = user_details
+                # Ensure aadhaar_id is still in the session
+                session['aadhaar_id'] = aadhaar_id
+                session.modified = True  # Force session update
+                
+                # Log the Aadhaar data being used
+                app.logger.info(f"Aadhaar verification successful for ID: {aadhaar_id}")
+                app.logger.debug(f"Aadhaar user details: {user_details.get('name')}, {user_details.get('gender')}, {user_details.get('date_of_birth')}")
+                app.logger.debug(f"Session data: aadhaar_id={session.get('aadhaar_id')}, has_aadhaar_data={bool(session.get('aadhaar_data'))}")
                 
                 flash('Aadhaar verification successful! Please complete your registration.', 'success')
                 return redirect(url_for('complete_aadhaar_registration'))
             else:
-                flash(f'Failed to verify OTP: {response["message"]}', 'danger')
+                # Handle specific error types
+                error_type = response.get("error_type", "UNKNOWN")
+                should_regenerate = response.get("should_regenerate_otp", False)
+                
+                if should_regenerate:
+                    # Clear the reference ID to force regeneration
+                    session.pop('aadhaar_reference_id', None)
+                    
+                    if error_type in ["OTP_EXPIRED", "MAX_ATTEMPTS", "INVALID_REFERENCE"]:
+                        flash(f'Verification failed: {error_msg} Please request a new OTP.', 'danger')
+                        return redirect(url_for('register_with_aadhaar'))
+                    else:
+                        flash(f'Verification failed: {error_msg} Please check your Aadhaar number and try again.', 'danger')
+                        return redirect(url_for('register_with_aadhaar'))
+                else:
+                    # User can try again with the same OTP flow
+                    flash(f'Failed to verify OTP: {error_msg}. Please try again.', 'danger')
         
         reference_id = session.get('aadhaar_reference_id', '')
         return render_template('verify_aadhaar_registration.html', form=form, reference_id=reference_id)
@@ -105,12 +180,35 @@ def register_routes(app):
     def complete_aadhaar_registration():
         """Step 3: After successful Aadhaar verification, user completes registration with email and password"""
         # Check if we have Aadhaar data in the session
-        if 'aadhaar_data' not in session or 'aadhaar_id' not in session or 'registration_flow' not in session:
+        if 'aadhaar_data' not in session or 'aadhaar_id' not in session:
             flash('Please start the registration process again.', 'warning')
             return redirect(url_for('register_with_aadhaar'))
         
         aadhaar_data = session.get('aadhaar_data')
         aadhaar_id = session.get('aadhaar_id')
+        
+        # Validate that we have the necessary data
+        if not aadhaar_data or not aadhaar_id:
+            app.logger.error(f"Missing critical data: aadhaar_data={bool(aadhaar_data)}, aadhaar_id={bool(aadhaar_id)}")
+            flash('Registration data incomplete. Please try again.', 'danger')
+            return redirect(url_for('register_with_aadhaar'))
+        
+        # Add a debug log to verify the data
+        app.logger.info(f"Completing registration for Aadhaar ID: {aadhaar_id}")
+        app.logger.debug(f"Using Aadhaar data: {aadhaar_data.get('name')}, {aadhaar_data.get('gender')}, DOB: {aadhaar_data.get('date_of_birth')}")
+        app.logger.debug(f"Session data before user creation: aadhaar_id={session.get('aadhaar_id')}, aadhaar_data keys={session.get('aadhaar_data', {}).keys()}")
+        
+        # Double-check again if this Aadhaar ID is already registered
+        existing_profile = OwnerProfile.query.filter_by(aadhaar_id=aadhaar_id).first()
+        if existing_profile:
+            # Clear any session data to prevent reuse
+            session.pop('aadhaar_data', None)
+            session.pop('aadhaar_id', None)
+            session.pop('aadhaar_reference_id', None)
+            session.pop('registration_flow', None)
+            
+            flash('This Aadhaar number is already registered. Please use a different Aadhaar number or contact support.', 'danger')
+            return redirect(url_for('register_with_aadhaar'))
         
         form = AadhaarRegistrationForm()
         
@@ -172,7 +270,14 @@ def register_routes(app):
                 )
                 
                 db.session.add(owner_profile)
+                
+                # Log before commit for debugging
+                app.logger.info(f"About to commit new user with ID: {user.id} and Aadhaar ID: {aadhaar_id}")
+                
                 db.session.commit()
+                
+                # Log successful registration
+                app.logger.info(f"Successfully registered user with ID: {user.id} and Aadhaar ID: {aadhaar_id}")
                 
                 # Clear session data
                 session.pop('aadhaar_data', None)
@@ -188,7 +293,8 @@ def register_routes(app):
             except Exception as e:
                 db.session.rollback()
                 app.logger.error(f"Error creating user: {str(e)}")
-                flash(f'An error occurred while creating your account: {str(e)}. Please try again.', 'danger')
+                app.logger.exception("Full exception details:")
+                flash(f'An error occurred while creating your account. Please try again.', 'danger')
         
         return render_template('complete_registration.html', form=form, aadhaar_data=aadhaar_data)
     
@@ -223,6 +329,17 @@ def register_routes(app):
     
     @app.route('/logout')
     def logout():
+        # Clear all Aadhaar-related session data
+        session.pop('aadhaar_data', None)
+        session.pop('aadhaar_id', None)
+        session.pop('aadhaar_reference_id', None)
+        session.pop('registration_flow', None)
+        
+        # Also clear helper verification session data if exists
+        session.pop('helper_aadhaar_reference_id', None)
+        session.pop('helper_aadhaar_id', None)
+        session.pop('helper_id', None)
+        
         logout_user()
         flash('You have been logged out.', 'info')
         return redirect(url_for('index'))
@@ -417,273 +534,339 @@ def register_routes(app):
         return render_template('profile.html', form=form, owner_profile=owner_profile, documents=documents)
     
     # Helper Management Routes
-    @app.route('/helpers/create', methods=['GET', 'POST'])
+    @app.route('/create-helper', methods=['GET', 'POST'])
     @login_required
     def create_helper():
-        form = HelperProfileForm()
+        """Create a new helper profile or associate an existing one"""
+        form = CreateHelperForm()
         
-        # Populate languages from the database
-        languages = Language.query.all()
-        form.languages.choices = [(str(lang.id), lang.name) for lang in languages]
+        try:
+            # Fill the form with available languages
+            languages = Language.query.all()
+            if not languages:
+                # Add default languages if none exist
+                default_languages = ["English", "Hindi", "Bengali", "Tamil", "Telugu", "Marathi"]
+                for lang_name in default_languages:
+                    db.session.add(Language(name=lang_name))
+                db.session.commit()
+                languages = Language.query.all()
+            
+            form.languages.choices = [(str(lang.id), lang.name) for lang in languages]
+        except Exception as e:
+            print(f"Error loading languages: {str(e)}")
+            app.logger.error(f"Error loading languages: {str(e)}")
+            form.languages.choices = [('1', 'English')]  # Default fallback
+        
+        # Debug request
+        if request.method == 'POST':
+            print("Form submitted with POST method")
+            print(f"Form data: {request.form}")
+            print(f"Photo data present: {form.photo.data is not None}")
+            print(f"helper_id: {form.helper_id.data}")
+            print(f"Form valid: {form.validate()}")
+            
+            if not form.validate():
+                print("Form validation errors:")
+                for field, errors in form.errors.items():
+                    print(f"Field {field}: {errors}")
+                # Detailed field validation info
+                print(f"helper_id field data: {form.helper_id.data}")
+                print(f"helper_id field valid: {form.helper_id.validate(form)}")
         
         if form.validate_on_submit():
-            # Set helper_id based on helper type
-            helper_id = None
-            if form.helper_type.data == 'maid':
-                helper_id = form.aadhar_id.data
-                # Validate Aadhar ID format
-                if not helper_id or len(helper_id) != 12 or not helper_id.isdigit():
-                    flash('Please enter a valid 12-digit Aadhar ID', 'danger')
-                    return render_template('create_helper.html', form=form)
-            else:  # Driver
-                helper_id = form.driving_license_id.data
-                if not helper_id:
-                    flash('Please enter a valid Driving License ID', 'danger')
-                    return render_template('create_helper.html', form=form)
+            helper_id = form.helper_id.data
             
             # Check if helper already exists
             existing_helper = HelperProfile.query.filter_by(helper_id=helper_id).first()
+            
             if existing_helper:
-                flash('A helper with this ID already exists!', 'danger')
-                return redirect(url_for('create_helper'))
+                # Associate the current owner with this helper if not already associated
+                existing_association = OwnerHelperAssociation.query.filter_by(
+                    owner_id=current_user.id, 
+                    helper_profile_id=existing_helper.id
+                ).first()
+                
+                if existing_association:
+                    flash('You are already associated with this helper.', 'info')
+                else:
+                    # Create new association (not as primary owner)
+                    association = OwnerHelperAssociation(
+                        owner_id=current_user.id,
+                        helper_profile_id=existing_helper.id,
+                        is_primary_owner=False
+                    )
+                    db.session.add(association)
+                    db.session.commit()
+                    flash('You have been associated with this existing helper.', 'success')
+                
+                return redirect(url_for('helper_detail', helper_id=helper_id))
             
-            # Save photo if provided
+            # Process photo upload
             photo_url = None
-            if form.photo.data and form.photo.data.filename:
-                photo_url = save_file(form.photo.data, 'helper_photos')
-                if not photo_url:
-                    flash('Failed to upload photo. Please try again.', 'danger')
-                    return render_template('create_helper.html', form=form)
+            if form.photo.data:
+                try:
+                    filename = secure_filename(f"{helper_id}_{int(time.time())}.jpg")
+                    filepath = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], 'helper_photos', filename)
+                    form.photo.data.save(filepath)
+                    photo_url = url_for('static', filename=f"uploads/helper_photos/{filename}")
+                except Exception as e:
+                    flash(f'Error uploading photo: {str(e)}', 'danger')
             
-            # Get the selected languages
-            language_ids = form.languages.data or []  # Handle case when no languages are selected
-            language_names = []
-            for lang_id in language_ids:
-                language_obj = Language.query.get(int(lang_id))
-                if language_obj:
-                    language_names.append(language_obj.name)
-            language_str = ", ".join(language_names)
+            # Process languages
+            language_str = ""
+            try:
+                language_names = []
+                language_ids = request.form.getlist('languages')
+                if language_ids:
+                    for lang_id in language_ids:
+                        language_obj = Language.query.get(int(lang_id))
+                        if language_obj:
+                            language_names.append(language_obj.name)
+                    language_str = ", ".join(language_names)
+                else:
+                    language_str = "Not specified"
+            except Exception as e:
+                app.logger.error(f"Error processing languages: {str(e)}")
+                language_str = "Error processing languages"
             
             # Create helper profile with minimal information
-            helper = HelperProfile(
-                name=form.name.data,
-                helper_id=helper_id,
-                helper_type=form.helper_type.data,
-                phone_number=form.phone_number.data,
-                photo_url=photo_url,
-                languages=language_str,
-                created_by=current_user.id,
-                verification_status='Unverified'
-            )
-            
-            db.session.add(helper)
-            db.session.commit()
-            
-            flash('Helper profile created successfully! You can now verify their Aadhaar details.', 'success')
-            # Redirect to a helper verification page in the future
-            return redirect(url_for('helper_detail', helper_id=helper.helper_id))
+            try:
+                helper = HelperProfile(
+                    name=form.name.data,
+                    helper_id=helper_id,
+                    helper_type=form.helper_type.data,
+                    phone_number=form.phone_number.data,
+                    photo_url=photo_url,
+                    languages=language_str,
+                    created_by=current_user.id,
+                    gender=form.gender.data,
+                    verification_status='Unverified'
+                )
+                
+                db.session.add(helper)
+                db.session.commit()
+                
+                # Create the owner-helper association with this user as primary owner
+                association = OwnerHelperAssociation(
+                    owner_id=current_user.id,
+                    helper_profile_id=helper.id,
+                    is_primary_owner=True
+                )
+                db.session.add(association)
+                db.session.commit()
+                
+                flash('Helper profile created successfully! You can now verify their Aadhaar details.', 'success')
+                # Redirect to a helper verification page in the future
+                return redirect(url_for('helper_detail', helper_id=helper.helper_id))
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Error creating helper: {str(e)}")
+                flash(f'An error occurred while creating the helper: {str(e)}', 'danger')
         
         return render_template('create_helper.html', form=form)
     
     @app.route('/helpers/<helper_id>')
     @login_required
     def helper_detail(helper_id):
+        """View details of a helper"""
         helper = HelperProfile.query.filter_by(helper_id=helper_id).first_or_404()
         
-        # Get documents, contracts, reviews and incident reports
-        documents = HelperDocument.query.filter_by(helper_profile_id=helper.id).all()
-        contracts = Contract.query.filter_by(helper_profile_id=helper.id).all()
-        reviews = Review.query.filter_by(helper_profile_id=helper.id).all()
-        incidents = IncidentReport.query.filter_by(helper_profile_id=helper.id).all()
+        # Check if the current user is associated with this helper
+        association = OwnerHelperAssociation.query.filter_by(
+            helper_profile_id=helper.id,
+            owner_id=current_user.id
+        ).first()
         
-        # Calculate average ratings if reviews exist
-        avg_ratings = {}
-        if reviews:
-            avg_ratings = {
-                'tasks_average': sum([r.tasks_average for r in reviews]) / len(reviews),
-                'punctuality': sum([r.punctuality for r in reviews]) / len(reviews),
-                'attitude': sum([r.attitude for r in reviews]) / len(reviews),
-                'hygiene': sum([r.hygiene for r in reviews]) / len(reviews),
-                'communication': sum([r.communication for r in reviews]) / len(reviews),
-                'reliability': sum([r.reliability for r in reviews]) / len(reviews),
-                'overall': sum([
-                    (r.tasks_average + r.punctuality + r.attitude + r.hygiene + r.communication + r.reliability) / 6
-                    for r in reviews
-                ]) / len(reviews)
-            }
+        if not association and current_user.role != 'admin':
+            flash('You can only view helpers that are associated with your account.', 'danger')
+            return redirect(url_for('owner_dashboard'))
+        
+        # Get verification logs for this helper
+        verification_logs = HelperVerificationLog.query.filter_by(
+            helper_profile_id=helper.id
+        ).order_by(HelperVerificationLog.verification_timestamp.desc()).all()
+        
+        # Check if current user is the primary owner
+        is_primary_owner = association.is_primary_owner if association else False
+        
+        # Get all owners of this helper
+        owner_associations = OwnerHelperAssociation.query.filter_by(
+            helper_profile_id=helper.id
+        ).all()
+        owner_ids = [assoc.owner_id for assoc in owner_associations]
+        owners = User.query.filter(User.id.in_(owner_ids)).all() if owner_ids else []
+        
+        # Get current date for age calculation
+        now = datetime.datetime.now()
         
         return render_template('helper_detail.html', 
                               helper=helper, 
-                              documents=documents,
-                              contracts=contracts, 
-                              reviews=reviews, 
-                              incidents=incidents,
-                              avg_ratings=avg_ratings)
-    
-    @app.route('/contract/create/<helper_id>', methods=['GET', 'POST'])
+                              verification_logs=verification_logs,
+                              is_primary_owner=is_primary_owner,
+                              owners=owners,
+                              now=now)
+                              
+    @app.route('/contracts/create/<helper_id>', methods=['GET', 'POST'])
     @login_required
     def create_contract(helper_id):
+        """Create a new contract with a helper"""
         helper = HelperProfile.query.filter_by(helper_id=helper_id).first_or_404()
         
+        # Check if the current user is associated with this helper
+        association = OwnerHelperAssociation.query.filter_by(
+            helper_profile_id=helper.id,
+            owner_id=current_user.id
+        ).first()
+        
+        if not association:
+            flash('You can only create contracts with helpers that are associated with your account.', 'danger')
+            return redirect(url_for('owner_dashboard'))
+        
+        # Create contract form
         form = ContractForm()
+        form.helper_id.data = helper.helper_id
+        form.helper_type.data = helper.helper_type
         
-        # Add task choices to form
-        tasks = TaskList.query.all()
-        form.tasks.choices = [(str(task.id), task.name) for task in tasks]
+        # Set default start date to today
+        form.start_date.data = datetime.date.today()
         
-        if form.validate_on_submit():
-            # Create a unique contract ID
-            contract_id = get_unique_id('contract')
-            
-            # Parse tasks data
-            tasks_str = ','.join(request.form.getlist('tasks'))
-            
-            # Create contract
-            contract = Contract(
-                contract_id=contract_id,
-                helper_profile_id=helper.id,
-                owner_id=current_user.id,
-                tasks=tasks_str,
-                start_date=form.start_date.data,
-                end_date=form.end_date.data if form.end_date.data else None,
-                monthly_salary=form.monthly_salary.data
-            )
-            
-            db.session.add(contract)
-            db.session.commit()
-            
-            flash('Contract created successfully!', 'success')
-            return redirect(url_for('helper_detail', helper_id=helper.helper_id))
+        # Load tasks from database for the select field based on helper type
+        tasks = TaskList.query.filter_by(helper_type=helper.helper_type).all()
         
-        form.helper_id.data = helper_id
+        # Define separator used to distinguish categories in task labels
+        category_separator = " - "
         
-        return render_template('contract.html', form=form, helper=helper)
+        # Organize tasks by category
+        categorized_tasks = {}
+        for task in tasks:
+            if task.category not in categorized_tasks:
+                categorized_tasks[task.category] = []
+            
+            # Only include sub-tasks as selectable options
+            # Main tasks should only serve as category headers and not be selectable
+            if not task.is_main_task:
+                # Add category prefix for proper categorization in UI
+                choice_label = f"{task.category}{category_separator}{task.name}"
+                categorized_tasks[task.category].append((str(task.id), choice_label))
+        
+        # Flatten the choices list
+        all_choices = []
+        for category, choices in categorized_tasks.items():
+            all_choices.extend(choices)
+            
+        form.tasks.choices = all_choices
+        
+        # Debug information for form validation
+        app.logger.info(f"Form submitted: {request.form}")
+        app.logger.info(f"Form validation result: {form.validate()}")
+        if form.errors:
+            app.logger.info(f"Form errors: {form.errors}")
+        
+        # Process form even if validation fails for certain fields
+        if request.method == 'POST':
+            try:
+                # Create a unique contract ID
+                contract_id = f"CT{int(time.time())}{current_user.id}{helper.id}"
+                
+                # Get selected tasks as comma-separated list
+                selected_tasks = request.form.getlist('tasks')
+                tasks_str = ','.join(selected_tasks)
+                
+                # Get start_date value from request
+                start_date_str = request.form.get('start_date', '')
+                start_date = None
+                if start_date_str and start_date_str.strip():
+                    try:
+                        start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                    except ValueError:
+                        flash('Invalid start date format. Please use YYYY-MM-DD format.', 'danger')
+                        return render_template('contract.html', form=form, helper=helper, category_separator=category_separator)
+                else:
+                    flash('Start date is required.', 'danger')
+                    return render_template('contract.html', form=form, helper=helper, category_separator=category_separator)
+                
+                # Get end_date value from request
+                end_date_str = request.form.get('end_date', '')
+                end_date = None
+                if end_date_str and end_date_str.strip():
+                    try:
+                        end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                    except ValueError:
+                        # If invalid date format, leave as None
+                        pass
+                
+                # Create contract
+                contract = Contract(
+                    contract_id=contract_id,
+                    helper_profile_id=helper.id,
+                    owner_id=current_user.id,
+                    tasks=tasks_str,
+                    is_full_time=form.is_full_time.data,
+                    working_hours_from=None if form.is_full_time.data else form.working_hours_from.data,
+                    working_hours_to=None if form.is_full_time.data else form.working_hours_to.data,
+                    start_date=start_date,  # Use directly parsed value
+                    end_date=end_date,  # Use directly parsed value
+                    monthly_salary=form.monthly_salary.data
+                )
+                
+                db.session.add(contract)
+                db.session.commit()
+                
+                flash('Contract created successfully!', 'success')
+                return redirect(url_for('owner_dashboard'))
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Error creating contract: {str(e)}")
+                flash(f'An error occurred while creating the contract: {str(e)}', 'danger')
+        
+        return render_template('contract.html', form=form, helper=helper, category_separator=category_separator)
     
-    @app.route('/review/create/<helper_id>', methods=['GET', 'POST'])
+    @app.route('/helpers/<helper_id>/associate', methods=['GET', 'POST'])
     @login_required
-    def create_review(helper_id):
+    def associate_helper(helper_id):
+        """Associate an existing helper with the current user"""
         helper = HelperProfile.query.filter_by(helper_id=helper_id).first_or_404()
         
-        form = ReviewForm()
+        # Check if already associated
+        existing_association = OwnerHelperAssociation.query.filter_by(
+            owner_id=current_user.id,
+            helper_profile_id=helper.id
+        ).first()
+        
+        if existing_association:
+            flash('You are already associated with this helper.', 'info')
+            return redirect(url_for('helper_detail', helper_id=helper_id))
+        
+        # Create new association (not as primary owner)
+        association = OwnerHelperAssociation(
+            owner_id=current_user.id,
+            helper_profile_id=helper.id,
+            is_primary_owner=False
+        )
+        db.session.add(association)
+        db.session.commit()
+        
+        flash('You have been associated with this helper.', 'success')
+        return redirect(url_for('helper_detail', helper_id=helper_id))
+    
+    @app.route('/search-helper', methods=['GET', 'POST'])
+    @login_required
+    def search_helper():
+        """Search for a helper by Aadhaar ID or name to associate with"""
+        form = SearchHelperForm()
         
         if form.validate_on_submit():
-            # Create a unique review ID
-            review_id = get_unique_id('review')
+            search_term = form.search_term.data
             
-            # Create review
-            review = Review(
-                review_id=review_id,
-                helper_profile_id=helper.id,
-                owner_id=current_user.id,
-                tasks_average=float(form.tasks_average.data),
-                punctuality=float(form.punctuality.data),
-                attitude=float(form.attitude.data),
-                hygiene=float(form.hygiene.data),
-                communication=float(form.communication.data),
-                reliability=float(form.reliability.data),
-                comments=form.comments.data
-            )
+            # Search by Aadhaar ID (exact match) or name (partial match)
+            helpers = HelperProfile.query.filter(
+                (HelperProfile.helper_id == search_term) |
+                (HelperProfile.name.ilike(f'%{search_term}%'))
+            ).all()
             
-            db.session.add(review)
-            db.session.commit()
+            return render_template('search_helper_results.html', helpers=helpers, search_term=search_term)
             
-            flash('Review submitted successfully!', 'success')
-            return redirect(url_for('helper_detail', helper_id=helper.helper_id))
-        
-        form.helper_id.data = helper_id
-        
-        return render_template('review.html', form=form, helper=helper)
-    
-    @app.route('/incident/report/<helper_id>', methods=['GET', 'POST'])
-    @login_required
-    def report_incident(helper_id):
-        helper = HelperProfile.query.filter_by(helper_id=helper_id).first_or_404()
-        
-        form = IncidentReportForm()
-        
-        if form.validate_on_submit():
-            # Create a unique report ID
-            report_id = get_unique_id('incident')
-            
-            # Create incident report
-            incident = IncidentReport(
-                report_id=report_id,
-                helper_profile_id=helper.id,
-                owner_id=current_user.id,
-                date=form.date.data,
-                description=form.description.data,
-                fir_number=form.fir_number.data if form.fir_number.data else None
-            )
-            
-            db.session.add(incident)
-            db.session.commit()
-            
-            flash('Incident reported successfully!', 'success')
-            return redirect(url_for('helper_detail', helper_id=helper.helper_id))
-        
-        form.helper_id.data = helper_id
-        
-        return render_template('incident.html', form=form, helper=helper)
-    
-    @app.route('/connect/<helper_id>', methods=['GET', 'POST'])
-    @login_required
-    def owner_connect(helper_id):
-        helper = HelperProfile.query.filter_by(helper_id=helper_id).first_or_404()
-        
-        form = OwnerToOwnerConnectForm()
-        
-        if form.validate_on_submit():
-            # Create a unique form ID
-            form_id = get_unique_id('connect')
-            
-            # Create owner-to-owner connect request
-            connect = OwnerToOwnerConnect(
-                form_id=form_id,
-                helper_profile_id=helper.id,
-                from_owner_id=current_user.id,
-                to_owner_contact=form.to_owner_contact.data,
-                message=form.message.data,
-                stored_locally=form.stored_locally.data
-            )
-            
-            db.session.add(connect)
-            db.session.commit()
-            
-            # Send notification (mock functionality for now)
-            send_notification(
-                to=form.to_owner_contact.data,
-                subject='HouseHelpNetwork: New Connect Request',
-                message=f'{current_user.name} wants to connect regarding a helper'
-            )
-            
-            flash('Connection request sent successfully!', 'success')
-            return redirect(url_for('helper_detail', helper_id=helper.helper_id))
-        
-        form.helper_id.data = helper_id
-        
-        return render_template('owner_connect.html', form=form, helper=helper)
-    
-    @app.route('/search', methods=['GET', 'POST'])
-    @login_required
-    def search():
-        form = SearchForm()
-        helper = None
-        
-        if form.validate_on_submit() or request.args.get('search_value'):
-            search_type = form.search_type.data if form.validate_on_submit() else request.args.get('search_type')
-            search_value = form.search_value.data if form.validate_on_submit() else request.args.get('search_value')
-            
-            if search_type == 'gov_id':
-                helper = HelperProfile.query.filter_by(gov_id=search_value).first()
-            elif search_type == 'phone_number':
-                helper = HelperProfile.query.filter_by(phone_number=search_value).first()
-            
-            if helper:
-                return redirect(url_for('helper_detail', helper_id=helper.helper_id))
-            else:
-                flash('No helper found with the provided information.', 'info')
-        
-        return render_template('search.html', form=form, helper=helper)
+        return render_template('search_helper.html', form=form)
     
     # Admin routes
     @app.route('/admin/dashboard')
@@ -997,32 +1180,41 @@ def register_routes(app):
     @login_required
     def owner_dashboard():
         """Dashboard for owners showing their helpers and contracts"""
-        # Get helpers created by this user
-        helpers = HelperProfile.query.filter_by(created_by=current_user.id).all()
+        # Get helpers associated with this user (including those created by others)
+        associations = OwnerHelperAssociation.query.filter_by(owner_id=current_user.id).all()
+        helper_ids = [assoc.helper_profile_id for assoc in associations]
+        helpers = HelperProfile.query.filter(HelperProfile.id.in_(helper_ids)).all() if helper_ids else []
         helpers_count = len(helpers)
         
         # Get contracts for this user
         contracts = Contract.query.filter_by(owner_id=current_user.id).all()
         
+        # Sort contracts: active contracts first, then terminated contracts
+        sorted_contracts = sorted(contracts, key=lambda c: (c.is_terminated, -c.created_at.timestamp()))
+        
         return render_template('owner_dashboard.html', 
                               helpers=helpers,
                               helpers_count=helpers_count,
-                              contracts=contracts)
+                              contracts=sorted_contracts)
 
     @app.route('/helpers/<helper_id>/verify', methods=['GET', 'POST'])
     @login_required
     def verify_helper_aadhaar(helper_id):
         helper = HelperProfile.query.filter_by(helper_id=helper_id).first_or_404()
         
-        # Check if the current user created this helper profile
-        if helper.created_by != current_user.id:
-            flash('You can only verify helpers that you have added.', 'danger')
+        # Check if the current user is associated with this helper
+        association = OwnerHelperAssociation.query.filter_by(
+            helper_profile_id=helper.id,
+            owner_id=current_user.id
+        ).first()
+        
+        if not association:
+            flash('You can only verify helpers that are associated with your account.', 'danger')
             return redirect(url_for('owner_dashboard'))
         
-        # Check if helper is already verified
+        # Check if helper is already verified - now just display a notice but continue
         if helper.verification_status == 'Verified':
-            flash('This helper is already verified.', 'info')
-            return redirect(url_for('helper_detail', helper_id=helper_id))
+            flash('This helper is already verified. Re-verification will update existing data.', 'info')
         
         form = HelperAadhaarVerificationForm()
         
@@ -1069,29 +1261,81 @@ def register_routes(app):
         
         helper = HelperProfile.query.filter_by(helper_id=helper_id).first_or_404()
         
+        # Check if the current user is associated with this helper
+        association = OwnerHelperAssociation.query.filter_by(
+            helper_profile_id=helper.id,
+            owner_id=current_user.id
+        ).first()
+        
+        if not association:
+            flash('You can only verify helpers that are associated with your account.', 'danger')
+            return redirect(url_for('owner_dashboard'))
+        
         form = AadhaarOTPForm()
         
         if form.validate_on_submit():
             otp = form.otp.data
             reference_id = form.reference_id.data or session['helper_aadhaar_reference_id']
+            aadhaar_id = session.get('helper_aadhaar_id')
             
             # Call Sandbox API to verify OTP
-            response = verify_aadhaar_otp(reference_id, otp)
+            response = verify_aadhaar_otp(reference_id, otp, user_id=current_user.id)
             
             if response["success"]:
                 user_details = response.get("user_details", {})
                 address_dict = user_details.get("address", {})
                 
+                # Store the transaction_id and timestamp from the response
+                transaction_id = response.get("transaction_id", "")
+                timestamp = response.get("timestamp")
+                
+                # Format the complete address as a string for storage
+                full_address = user_details.get("full_address", "")
+                
                 # Update helper profile with Aadhaar details
                 helper.verification_status = 'Verified'
+                helper.aadhaar_verified = True
+                helper.aadhaar_verified_at = datetime.datetime.utcnow()
                 
-                # Update other fields with Aadhaar data
-                if user_details.get("name"):
-                    helper.name = user_details.get("name")
-                if user_details.get("gender"):
-                    helper.gender = user_details.get("gender")
-                if address_dict.get("state"):
-                    helper.state = address_dict.get("state")
+                # Update personal details from Aadhaar
+                helper.name = user_details.get("name", helper.name)
+                helper.gender = user_details.get("gender", helper.gender)
+                helper.aadhaar_dob = user_details.get("date_of_birth", "")
+                helper.aadhaar_address = full_address
+                helper.aadhaar_photo = user_details.get("photo", "")
+                
+                # Update detailed address components
+                helper.address_house = address_dict.get("house", "")
+                helper.address_landmark = address_dict.get("landmark", "")
+                helper.address_vtc = address_dict.get("vtc", "")
+                helper.address_district = address_dict.get("district", "")
+                helper.address_state = address_dict.get("state", "")
+                helper.address_pincode = str(address_dict.get("pincode", ""))
+                helper.address_country = address_dict.get("country", "India")
+                helper.address_post_office = address_dict.get("post_office", "")
+                helper.address_street = address_dict.get("street", "")
+                helper.address_subdistrict = address_dict.get("subdistrict", "")
+                
+                # Update original fields
+                helper.state = address_dict.get("state", helper.state)
+                helper.city = address_dict.get("district", address_dict.get("vtc", helper.city))
+                helper.society = address_dict.get("landmark", helper.society)
+                helper.street = address_dict.get("street", helper.street)
+                helper.apartment_number = address_dict.get("house", helper.apartment_number)
+                
+                # Create a verification log entry with all the verification data
+                verification_log = HelperVerificationLog(
+                    helper_profile_id=helper.id,
+                    verified_by=current_user.id,
+                    verification_result='Valid',
+                    transaction_id=transaction_id,
+                    verification_data={
+                        "timestamp": timestamp,
+                        "transaction_id": transaction_id,
+                        "data": user_details
+                    }
+                )
+                db.session.add(verification_log)
                 
                 db.session.commit()
                 
@@ -1100,10 +1344,213 @@ def register_routes(app):
                 session.pop('helper_aadhaar_id', None)
                 session.pop('helper_id', None)
                 
-                flash('Helper verified successfully!', 'success')
+                # Check if this was a re-verification
+                is_reverification = HelperVerificationLog.query.filter_by(helper_profile_id=helper.id).count() > 1
+                if is_reverification:
+                    flash('Helper re-verified successfully! The profile has been updated with the latest Aadhaar information.', 'success')
+                else:
+                    flash('Helper verified successfully!', 'success')
+                    
                 return redirect(url_for('helper_detail', helper_id=helper_id))
             else:
-                flash(f'Failed to verify OTP: {response["message"]}', 'danger')
+                error_type = response.get("error_type", "UNKNOWN")
+                error_msg = response.get("message", "Unknown error")
+                retry_recommended = response.get("retry_recommended", False)
+                should_regenerate = response.get("should_regenerate_otp", False)
+                
+                # Handle different error scenarios
+                if should_regenerate:
+                    # Clear the reference ID to force regeneration
+                    session.pop('helper_aadhaar_reference_id', None)
+                    
+                    if error_type in ["OTP_EXPIRED", "MAX_ATTEMPTS", "INVALID_REFERENCE"]:
+                        flash(f'Verification failed: {error_msg} Please request a new OTP.', 'danger')
+                        return redirect(url_for('verify_helper_aadhaar', helper_id=helper_id))
+                    else:
+                        flash(f'Verification failed: {error_msg} Please check the Aadhaar number and try again.', 'danger')
+                        return redirect(url_for('verify_helper_aadhaar', helper_id=helper_id))
+                else:
+                    # User can try again with the same OTP flow
+                    flash(f'Failed to verify OTP: {error_msg}. Please try again.', 'danger')
         
         reference_id = session.get('helper_aadhaar_reference_id', '')
         return render_template('verify_helper_otp.html', form=form, reference_id=reference_id, helper=helper)
+
+    @app.route('/contracts/<contract_id>')
+    @login_required
+    def contract_detail(contract_id):
+        """View details of a contract"""
+        contract = Contract.query.filter_by(contract_id=contract_id).first_or_404()
+        
+        # Check if the current user is the owner of this contract
+        if contract.owner_id != current_user.id and current_user.role != 'admin':
+            flash('You can only view contracts that you created.', 'danger')
+            return redirect(url_for('owner_dashboard'))
+        
+        # Get helper details
+        helper = HelperProfile.query.get(contract.helper_profile_id)
+        
+        # Get task details
+        task_ids = contract.tasks.split(',') if contract.tasks else []
+        tasks = TaskList.query.filter(TaskList.id.in_(task_ids)).all() if task_ids else []
+        
+        # Organize tasks by category
+        tasks_by_category = {}
+        for task in tasks:
+            if task.category not in tasks_by_category:
+                tasks_by_category[task.category] = []
+            tasks_by_category[task.category].append(task)
+        
+        return render_template('contract_detail.html', 
+                              contract=contract, 
+                              helper=helper,
+                              tasks_by_category=tasks_by_category)
+
+    @app.route('/contracts/<contract_id>/terminate', methods=['GET', 'POST'])
+    @login_required
+    def terminate_contract(contract_id):
+        """Terminate an existing contract"""
+        contract = Contract.query.filter_by(contract_id=contract_id).first_or_404()
+        
+        # Check if the current user is the owner of this contract
+        if contract.owner_id != current_user.id:
+            flash('You can only terminate contracts that you created.', 'danger')
+            return redirect(url_for('contract_detail', contract_id=contract_id))
+        
+        # Check if contract is already terminated
+        if contract.is_terminated:
+            flash('This contract has already been terminated.', 'info')
+            return redirect(url_for('contract_detail', contract_id=contract_id))
+        
+        if request.method == 'POST':
+            termination_reason = request.form.get('termination_reason', '')
+            
+            # Update contract
+            contract.is_terminated = True
+            contract.termination_reason = termination_reason
+            
+            try:
+                db.session.commit()
+                flash('Contract terminated successfully.', 'success')
+                return redirect(url_for('owner_dashboard'))
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Error terminating contract: {str(e)}")
+                flash(f'An error occurred while terminating the contract: {str(e)}', 'danger')
+        
+        return render_template('terminate_contract.html', contract=contract)
+
+    @app.route('/admin/aadhaar-logs')
+    @login_required
+    @admin_required
+    def admin_aadhaar_logs():
+        """Admin view to see all Aadhaar API interactions for debugging and audit purposes"""
+        from sqlalchemy import desc
+        from flask import request
+        
+        # Get query parameters for filtering
+        request_type = request.args.get('type')
+        status = request.args.get('status')
+        aadhaar_id = request.args.get('aadhaar_id')
+        reference_id = request.args.get('reference_id')
+        from_date = request.args.get('from_date')
+        to_date = request.args.get('to_date')
+        
+        # Pagination
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
+        
+        # Build query
+        query = AadhaarAPILog.query
+        
+        # Apply filters
+        if request_type:
+            query = query.filter(AadhaarAPILog.request_type == request_type)
+        
+        if status:
+            success = (status == 'success')
+            query = query.filter(AadhaarAPILog.success == success)
+            
+        if aadhaar_id:
+            query = query.filter(AadhaarAPILog.aadhaar_id == aadhaar_id)
+            
+        if reference_id:
+            query = query.filter(AadhaarAPILog.reference_id == reference_id)
+            
+        if from_date:
+            try:
+                from_date_obj = datetime.datetime.strptime(from_date, '%Y-%m-%d')
+                query = query.filter(AadhaarAPILog.created_at >= from_date_obj)
+            except ValueError:
+                pass
+                
+        if to_date:
+            try:
+                to_date_obj = datetime.datetime.strptime(to_date, '%Y-%m-%d')
+                to_date_obj = to_date_obj + datetime.timedelta(days=1)  # Include the entire day
+                query = query.filter(AadhaarAPILog.created_at <= to_date_obj)
+            except ValueError:
+                pass
+        
+        # Order by most recent first
+        query = query.order_by(desc(AadhaarAPILog.created_at))
+        
+        # Paginate results
+        logs_pagination = query.paginate(page=page, per_page=per_page)
+        
+        # Get statistics
+        total_logs = AadhaarAPILog.query.count()
+        success_logs = AadhaarAPILog.query.filter_by(success=True).count()
+        failure_logs = total_logs - success_logs
+        success_rate = (success_logs / total_logs * 100) if total_logs > 0 else 0
+        
+        # Count by request type
+        generate_otp_count = AadhaarAPILog.query.filter_by(request_type='generate_otp').count()
+        verify_otp_count = AadhaarAPILog.query.filter_by(request_type='verify_otp').count()
+        token_count = AadhaarAPILog.query.filter_by(request_type='token').count()
+        
+        return render_template(
+            'admin/aadhaar_logs.html',
+            logs=logs_pagination.items,
+            pagination=logs_pagination,
+            total_logs=total_logs,
+            success_logs=success_logs,
+            failure_logs=failure_logs,
+            success_rate=success_rate,
+            generate_otp_count=generate_otp_count,
+            verify_otp_count=verify_otp_count,
+            token_count=token_count,
+            request_type=request_type,
+            status=status,
+            aadhaar_id=aadhaar_id,
+            reference_id=reference_id,
+            from_date=from_date,
+            to_date=to_date
+        )
+    
+    @app.route('/admin/aadhaar-logs/<int:log_id>')
+    @login_required
+    @admin_required
+    def aadhaar_log_detail(log_id):
+        """View detailed information about a specific Aadhaar API log entry"""
+        log = AadhaarAPILog.query.get_or_404(log_id)
+        
+        # Get user details if available
+        user = None
+        if log.user_id:
+            user = User.query.get(log.user_id)
+            
+        # Get related logs (same session_id)
+        related_logs = []
+        if log.session_id:
+            related_logs = AadhaarAPILog.query.filter(
+                AadhaarAPILog.session_id == log.session_id,
+                AadhaarAPILog.id != log.id
+            ).order_by(AadhaarAPILog.created_at).all()
+        
+        return render_template(
+            'admin/aadhaar_log_detail.html',
+            log=log,
+            user=user,
+            related_logs=related_logs
+        )

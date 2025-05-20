@@ -18,7 +18,7 @@
                 
                 {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == url_for('search') %}active{% endif %}" href="{{ url_for('search') }}">
+                        <a class="nav-link {% if request.path == url_for('search_helper') %}active{% endif %}" href="{{ url_for('search_helper') }}">
                             <i class="fas fa-search"></i> Search
                         </a>
                     </li>

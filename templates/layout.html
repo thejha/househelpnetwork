@@ -22,9 +22,6 @@
     <!-- Bootstrap Multiselect CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-multiselect@1.1.0/dist/css/bootstrap-multiselect.min.css">
     
-    <!-- Uploadcare CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@uploadcare/blocks@0.32.3/web/form-control.min.css">
-    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     
@@ -59,12 +56,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-multiselect@1.1.0/dist/js/bootstrap-multiselect.min.js"></script>
     
     <!-- Uploadcare JS -->
-    <script type="module">
-        import * as LR from 'https://cdn.jsdelivr.net/npm/@uploadcare/blocks@0.32.3/web/lr-file-uploader-regular.min.js';
-        LR.registerBlocks(window);
-    </script>
+    <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
     <script>
-        const UPLOADCARE_PUBLIC_KEY = "{{ config.UPLOADCARE_PUBLIC_KEY }}";
+        UPLOADCARE_PUBLIC_KEY = "{{ config.UPLOADCARE_PUBLIC_KEY }}";
     </script>
     
     <!-- Custom JavaScript -->

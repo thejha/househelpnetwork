@@ -41,7 +41,7 @@
                     <i class="fas fa-check-circle fa-3x text-primary-purple mb-3"></i>
                     <h5 class="card-title">Verify Helper</h5>
                     <p class="card-text">Verify the credentials of a household helper.</p>
-                    <a href="{{ url_for('search') }}" class="btn btn-primary">Verify Helper</a>
+                    <a href="{{ url_for('search_helper') }}" class="btn btn-primary">Verify Helper</a>
                 </div>
             </div>
         </div>
@@ -68,12 +68,13 @@
                                 <th>Start Date</th>
                                 <th>End Date</th>
                                 <th>Monthly Salary</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for contract in contracts %}
-                                <tr>
+                                <tr {% if contract.is_terminated %}class="table-secondary"{% endif %}>
                                     <td>
                                         <a href="{{ url_for('helper_detail', helper_id=contract.helper_profile.helper_id) }}">
                                             {{ contract.helper_profile.name }}
@@ -82,7 +83,9 @@
                                     <td>{{ contract.contract_id }}</td>
                                     <td>{{ contract.start_date.strftime('%d %b, %Y') }}</td>
                                     <td>
-                                        {% if contract.end_date %}
+                                        {% if contract.is_terminated %}
+                                            <span class="text-muted">Terminated</span>
+                                        {% elif contract.end_date %}
                                             {{ contract.end_date.strftime('%d %b, %Y') }}
                                         {% else %}
                                             Ongoing
@@ -90,8 +93,18 @@
                                     </td>
                                     <td>₹{{ contract.monthly_salary }}</td>
                                     <td>
-                                        <a href="{{ url_for('helper_detail', helper_id=contract.helper_profile.helper_id) }}" class="btn btn-sm btn-light">
-                                            <i class="fas fa-eye"></i>
+                                        {% if contract.is_terminated %}
+                                            <span class="badge bg-danger">Terminated</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('helper_detail', helper_id=contract.helper_profile.helper_id) }}" class="btn btn-sm btn-light" title="View Helper">
+                                            <i class="fas fa-user"></i>
+                                        </a>
+                                        <a href="{{ url_for('contract_detail', contract_id=contract.contract_id) }}" class="btn btn-sm btn-primary" title="View Contract">
+                                            <i class="fas fa-file-contract"></i>
                                         </a>
                                     </td>
                                 </tr>
@@ -103,8 +116,13 @@
                 <div class="text-center py-5">
                     <i class="fas fa-file-contract fa-4x text-muted mb-3"></i>
                     <h5>No Contracts Yet</h5>
-                    <p class="text-muted">You haven't created any contracts yet. Start by registering a helper first.</p>
-                    <a href="{{ url_for('create_helper') }}" class="btn btn-primary">Register Helper</a>
+                    {% if helpers_count > 0 %}
+                        <p class="text-muted">You haven't created any contracts yet. Create a contract with your existing helper.</p>
+                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectHelperModal">Create Contract</a>
+                    {% else %}
+                        <p class="text-muted">You haven't created any contracts yet. Start by registering a helper first.</p>
+                        <a href="{{ url_for('create_helper') }}" class="btn btn-primary">Register Helper</a>
+                    {% endif %}
                 </div>
             {% endif %}
         </div>
@@ -152,8 +170,12 @@
                                     <div class="d-flex gap-2 mt-3">
                                         <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-primary flex-grow-1">View Profile</a>
                                         {% if helper.verification_status != 'Verified' %}
-                                            <a href="{{ url_for('verify_helper_aadhaar', helper_id=helper.helper_id) }}" class="btn btn-outline-success">
+                                            <a href="{{ url_for('verify_helper_aadhaar', helper_id=helper.helper_id) }}" class="btn btn-outline-success" title="Verify Helper">
                                                 <i class="fas fa-check-circle"></i>
+                                            </a>
+                                        {% else %}
+                                            <a href="{{ url_for('verify_helper_aadhaar', helper_id=helper.helper_id) }}" class="btn btn-outline-primary" title="Re-verify Helper">
+                                                <i class="fas fa-sync-alt"></i>
                                             </a>
                                         {% endif %}
                                     </div>

@@ -14,10 +14,11 @@
         <div class="col-lg-8">
             <div class="card mb-4">
                 <div class="card-header d-flex align-items-center">
-                    <h3 class="mb-0">Verify Helper</h3>
                     {% if helper.verification_status == 'Verified' %}
-                        <span class="badge bg-success ms-3">Verified</span>
+                        <h3 class="mb-0">Re-verify Helper</h3>
+                        <span class="badge bg-success ms-3">Already Verified</span>
                     {% else %}
+                        <h3 class="mb-0">Verify Helper</h3>
                         <span class="badge bg-warning text-dark ms-3">Unverified</span>
                     {% endif %}
                 </div>
@@ -38,7 +39,11 @@
                     
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
+                        {% if helper.verification_status == 'Verified' %}
+                        <strong>Re-verification Process:</strong> Updating the helper's information will overwrite existing Aadhaar data. We'll send an OTP to the mobile number linked with this Aadhaar.
+                        {% else %}
                         <strong>Verification Process:</strong> We'll send an OTP to the mobile number linked with this Aadhaar.
+                        {% endif %}
                     </div>
                     
                     <form method="POST" class="needs-validation" novalidate>

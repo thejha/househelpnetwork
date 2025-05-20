@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+
+{% block title %}Helper Search Results - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <a href="{{ url_for('search_helper') }}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Search
+        </a>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Search Results for "{{ search_term }}"</h4>
+        </div>
+        <div class="card-body">
+            {% if helpers %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Helper Type</th>
+                                <th>ID</th>
+                                <th>Phone</th>
+                                <th>Verification Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for helper in helpers %}
+                                <tr>
+                                    <td>{{ helper.name }}</td>
+                                    <td>{{ helper.helper_type|capitalize }}</td>
+                                    <td>{{ helper.helper_id }}</td>
+                                    <td>{{ helper.phone_number }}</td>
+                                    <td>
+                                        {% if helper.verification_status == 'Verified' %}
+                                            <span class="badge bg-success">Verified</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Unverified</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-sm btn-primary">View</a>
+                                        <a href="{{ url_for('associate_helper', helper_id=helper.helper_id) }}" class="btn btn-sm btn-success">Associate</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No helpers found with the search term "{{ search_term }}".
+                </div>
+                <p>Would you like to <a href="{{ url_for('create_helper') }}" class="link-primary">create a new helper profile</a> instead?</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

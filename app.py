@@ -1,5 +1,6 @@
 import os
 import logging
+import re
 from flask import Flask, request, jsonify
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import config
@@ -8,6 +9,16 @@ from extensions import db, login_manager, bcrypt, csrf
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+def slugify(value):
+    """
+    Convert a string to a URL-friendly slug.
+    """
+    # Convert to lowercase and replace spaces with hyphens
+    value = value.lower().strip()
+    value = re.sub(r'[^\w\s-]', '', value)
+    value = re.sub(r'[\s_-]+', '-', value)
+    return value
 
 def create_app(config_name='default'):
     """Factory function to create and configure the Flask app."""
@@ -20,16 +31,30 @@ def create_app(config_name='default'):
     # Configure the app
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     
+    # Enhance session security and persistence
+    app.config['SESSION_COOKIE_SECURE'] = app.config.get('SESSION_COOKIE_SECURE', False)  # Set to True in production
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['PERMANENT_SESSION_LIFETIME'] = app.config.get('PERMANENT_SESSION_LIFETIME', 3600)  # 1 hour default
+    app.config['SESSION_TYPE'] = 'filesystem'  # More reliable than the default
+    
     # Ensure upload folders exist
     upload_folder = app.config['UPLOAD_FOLDER']
     os.makedirs(os.path.join(app.root_path, upload_folder, 'helper_photos'), exist_ok=True)
     os.makedirs(os.path.join(app.root_path, upload_folder, 'helper_documents'), exist_ok=True)
+    
+    # Add custom filters to Jinja environment
+    app.jinja_env.filters['slugify'] = slugify
     
     # Initialize extensions with the app
     db.init_app(app)
     login_manager.init_app(app)
     bcrypt.init_app(app)
     csrf.init_app(app)
+    
+    # Configure session handling
+    from flask_session import Session
+    Session(app)
     
     with app.app_context():
         # Import models and create tables

@@ -15,7 +15,7 @@
             <div class="col-md-2 mb-4 mb-md-0">
                 <h4>Quick Links</h4>
                 <a href="{{ url_for('index') }}" class="footer-link">Home</a>
-                <a href="{{ url_for('search') }}" class="footer-link">Search</a>
+                <a href="{{ url_for('search_helper') }}" class="footer-link">Search</a>
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('profile') }}" class="footer-link">My Profile</a>
                     <a href="{{ url_for('create_helper') }}" class="footer-link">Add Helper</a>

@@ -11,12 +11,16 @@
                     <h4>Register with Aadhaar</h4>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info">
-                        <p><i class="fas fa-info-circle me-2"></i> We require Aadhaar verification for all new users to ensure a safe and trusted community.</p>
-                        <p class="mb-0">Please enter your 12-digit Aadhaar number below to start the verification process.</p>
-                    </div>
-                    
-                    {% include "partials/flash_messages.html" %}
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
                     
                     <form method="POST" action="">
                         {{ form.hidden_tag() }}

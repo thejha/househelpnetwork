@@ -2,6 +2,16 @@
 
 {% block title %}Create Contract - HouseHelpNetwork{% endblock %}
 
+{% block extra_head %}
+<!-- jQuery UI CSS -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<style>
+    .ui-datepicker {
+        z-index: 1060 !important; /* Ensure datepicker appears above other elements */
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="mb-4">
@@ -36,16 +46,119 @@
                     <form method="POST" class="needs-validation" novalidate>
                         {{ form.hidden_tag() }}
                         {{ form.helper_id }}
+                        {{ form.helper_type }}
                         
                         <div class="mb-3">
-                            {{ form.tasks.label(class="form-label") }}
-                            <select name="tasks" id="tasks" class="form-select" multiple="multiple">
+                            <div class="form-check form-switch">
+                                {{ form.is_full_time(class="form-check-input", id="isFullTime") }}
+                                {{ form.is_full_time.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-text">Check this if the {{ helper.helper_type }} will be working full-time</div>
+                        </div>
+                        
+                        <div id="workingHoursSection" class="mb-3 row">
+                            <div class="col-md-6">
+                                {{ form.working_hours_from.label(class="form-label") }}
+                                {{ form.working_hours_from(class="form-select" + (" is-invalid" if form.working_hours_from.errors else "")) }}
+                                <div class="form-text">24-hour format (e.g., 09:00)</div>
+                                {% if form.working_hours_from.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.working_hours_from.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.working_hours_to.label(class="form-label") }}
+                                {{ form.working_hours_to(class="form-select" + (" is-invalid" if form.working_hours_to.errors else "")) }}
+                                <div class="form-text">24-hour format (e.g., 17:00)</div>
+                                {% if form.working_hours_to.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.working_hours_to.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5 class="mb-2">Select Tasks</h5>
+                            <p class="text-muted small mb-3">Please select the tasks that the {{ helper.helper_type }} will be responsible for:</p>
+                            
+                            <!-- Task Categories as Accordion -->
+                            <div class="accordion" id="taskAccordion">
+                                {% set categories = {} %}
                                 {% for value, label in form.tasks.choices %}
-                                    <option value="{{ value }}">{{ label }}</option>
+                                    {% if category_separator in label %}
+                                        {% set category = label.split(category_separator)[0] %}
+                                        {% if category not in categories %}
+                                            {% if categories.update({category: []}) %}{% endif %}
+                                        {% endif %}
+                                        {% if categories[category].append((value, label.split(category_separator)[1].strip())) %}{% endif %}
+                                    {% else %}
+                                        {% if "Uncategorized" not in categories %}
+                                            {% if categories.update({"Uncategorized": []}) %}{% endif %}
+                                        {% endif %}
+                                        {% if categories["Uncategorized"].append((value, label)) %}{% endif %}
+                                    {% endif %}
                                 {% endfor %}
-                            </select>
+                                
+                                {% for category, tasks in categories.items() %}
+                                    {% set category_id = "cat-" + loop.index|string %}
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="heading-{{ category_id }}">
+                                            <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" 
+                                                    type="button" 
+                                                    data-bs-toggle="collapse" 
+                                                    data-bs-target="#collapse-{{ category_id }}" 
+                                                    aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" 
+                                                    aria-controls="collapse-{{ category_id }}">
+                                                <strong>{{ category }}</strong>
+                                                <span class="task-counter badge bg-secondary ms-2">0 selected</span>
+                                            </button>
+                                        </h2>
+                                        <div id="collapse-{{ category_id }}" 
+                                             class="accordion-collapse collapse {% if loop.first %}show{% endif %}" 
+                                             aria-labelledby="heading-{{ category_id }}" 
+                                             data-bs-parent="#taskAccordion">
+                                            <div class="accordion-body">
+                                                <div class="row">
+                                                    <div class="col-12 mb-2">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input select-all-category" 
+                                                                   type="checkbox" 
+                                                                   id="select-all-{{ category_id }}" 
+                                                                   data-category="{{ category_id }}">
+                                                            <label class="form-check-label fw-bold" for="select-all-{{ category_id }}">
+                                                                Select All {{ category }} Tasks
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    {% for value, task_name in tasks %}
+                                                        <div class="col-md-6 mb-2">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input task-checkbox category-{{ category_id }}" 
+                                                                       type="checkbox" 
+                                                                       name="tasks" 
+                                                                       value="{{ value }}" 
+                                                                       id="task-{{ value }}">
+                                                                <label class="form-check-label" for="task-{{ value }}">
+                                                                    {{ task_name }}
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
                             {% if form.tasks.errors %}
-                                <div class="invalid-feedback d-block">
+                                <div class="invalid-feedback d-block mt-2">
                                     {% for error in form.tasks.errors %}
                                         {{ error }}
                                     {% endfor %}
@@ -56,7 +169,17 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 {{ form.start_date.label(class="form-label") }}
-                                {{ form.start_date(class="form-control datepicker" + (" is-invalid" if form.start_date.errors else "")) }}
+                                <div class="input-group date">
+                                    <input type="text" 
+                                           name="start_date" 
+                                           class="form-control jquery-datepicker"
+                                           placeholder="YYYY-MM-DD" 
+                                           autocomplete="off"
+                                           id="startDateInput"
+                                           value="{{ form.start_date.data.strftime('%Y-%m-%d') if form.start_date.data else '' }}"
+                                           required>
+                                    <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                </div>
                                 {% if form.start_date.errors %}
                                     <div class="invalid-feedback">
                                         {% for error in form.start_date.errors %}
@@ -67,16 +190,23 @@
                             </div>
                             
                             <div class="col-md-6 mb-3">
-                                {{ form.end_date.label(class="form-label") }}
-                                {{ form.end_date(class="form-control datepicker" + (" is-invalid" if form.end_date.errors else "")) }}
+                                {{ form.end_date.label(class="form-label") }} <span class="text-muted small">(Optional)</span>
+                                <div class="input-group date">
+                                    <input type="text" 
+                                           name="end_date" 
+                                           class="form-control jquery-datepicker"
+                                           placeholder="Leave empty for ongoing contracts" 
+                                           autocomplete="off"
+                                           id="endDateInput">
+                                    <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                </div>
+                                <div class="form-text">Leave empty for ongoing contracts</div>
                                 {% if form.end_date.errors %}
                                     <div class="invalid-feedback">
                                         {% for error in form.end_date.errors %}
                                             {{ error }}
                                         {% endfor %}
                                     </div>
-                                {% else %}
-                                    <div class="form-text">Leave empty for ongoing contracts</div>
                                 {% endif %}
                             </div>
                         </div>
@@ -97,7 +227,7 @@
                         </div>
                         
                         <div class="d-grid">
-                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            <button type="submit" class="btn btn-primary btn-lg">Create Contract</button>
                         </div>
                     </form>
                 </div>
@@ -115,17 +245,116 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- jQuery UI JS -->
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize multiselect for tasks
-        $(document).ready(function() {
-            $('#tasks').multiselect({
-                includeSelectAllOption: true,
-                nonSelectedText: 'Select Tasks',
-                buttonWidth: '100%',
-                maxHeight: 300
+    $(document).ready(function() {
+        // Define the separator used in task labels
+        const category_separator = "{{ category_separator }}";
+        
+        // For working hours toggle
+        const isFullTimeCheckbox = document.getElementById('isFullTime');
+        const workingHoursSection = document.getElementById('workingHoursSection');
+        
+        if (isFullTimeCheckbox && workingHoursSection) {
+            // Initial state
+            toggleWorkingHours();
+            
+            // Toggle on change
+            isFullTimeCheckbox.addEventListener('change', toggleWorkingHours);
+            
+            function toggleWorkingHours() {
+                if (isFullTimeCheckbox.checked) {
+                    workingHoursSection.style.display = 'none';
+                } else {
+                    workingHoursSection.style.display = 'flex';
+                }
+            }
+        }
+        
+        // Tasks selection counters
+        function updateTaskCounters() {
+            const accordionItems = document.querySelectorAll('.accordion-item');
+            
+            accordionItems.forEach(item => {
+                const categoryId = item.querySelector('.accordion-button').getAttribute('data-bs-target').replace('#collapse-', '');
+                const checkboxes = item.querySelectorAll(`.category-${categoryId}:checked`);
+                const counter = item.querySelector('.task-counter');
+                
+                if (counter) {
+                    counter.textContent = `${checkboxes.length} selected`;
+                    
+                    // Update styling based on selection
+                    if (checkboxes.length > 0) {
+                        counter.classList.remove('bg-secondary');
+                        counter.classList.add('bg-success');
+                    } else {
+                        counter.classList.remove('bg-success');
+                        counter.classList.add('bg-secondary');
+                    }
+                }
+            });
+        }
+        
+        // Select all in category
+        document.querySelectorAll('.select-all-category').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const categoryId = this.dataset.category;
+                const categoryCheckboxes = document.querySelectorAll(`.category-${categoryId}`);
+                
+                categoryCheckboxes.forEach(cb => {
+                    cb.checked = this.checked;
+                });
+                
+                updateTaskCounters();
             });
         });
+        
+        // Individual task checkboxes
+        document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateTaskCounters();
+                
+                // Check if all checkboxes in this category are checked
+                const categoryClass = Array.from(this.classList).find(c => c.startsWith('category-'));
+                if (categoryClass) {
+                    const categoryId = categoryClass.replace('category-', '');
+                    const categoryCheckboxes = document.querySelectorAll(`.${categoryClass}`);
+                    const allChecked = Array.from(categoryCheckboxes).every(cb => cb.checked);
+                    const selectAllCheckbox = document.querySelector(`#select-all-${categoryId}`);
+                    
+                    if (selectAllCheckbox) {
+                        selectAllCheckbox.checked = allChecked;
+                    }
+                }
+            });
+        });
+        
+        // Initialize jQuery UI datepicker
+        $(".jquery-datepicker").datepicker({
+            dateFormat: 'yy-mm-dd',
+            changeMonth: true,
+            changeYear: true,
+            showButtonPanel: true,
+            yearRange: "-100:+10",
+            showOtherMonths: true,
+            selectOtherMonths: true
+        });
+        
+        // Add clear button for end date field
+        $('input[name="end_date"]')
+            .after('<button type="button" class="btn btn-sm btn-outline-secondary clear-date mt-1">Clear Date</button>')
+            .siblings('.clear-date').on('click', function() {
+                $(this).siblings('input[name="end_date"]').val('');
+            });
+        
+        // Make calendar appear when clicking on the calendar icon
+        $('.input-group-text').click(function() {
+            $(this).prev('input.jquery-datepicker').focus();
+        });
+        
+        // Initial counter update
+        updateTaskCounters();
     });
 </script>
 {% endblock %}

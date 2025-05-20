@@ -1,0 +1,205 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Aadhaar API Log Detail - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Aadhaar API Log Detail</h1>
+        <a href="{{ url_for('admin_aadhaar_logs') }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Logs
+        </a>
+    </div>
+    
+    <!-- Basic Information Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Log Information</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>ID:</th>
+                            <td>{{ log.id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Timestamp:</th>
+                            <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Request Type:</th>
+                            <td>
+                                {% if log.request_type == 'token' %}
+                                <span class="badge badge-info">Auth Token</span>
+                                {% elif log.request_type == 'generate_otp' %}
+                                <span class="badge badge-primary">Generate OTP</span>
+                                {% elif log.request_type == 'verify_otp' %}
+                                <span class="badge badge-warning">Verify OTP</span>
+                                {% else %}
+                                <span class="badge badge-secondary">{{ log.request_type }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                {% if log.success %}
+                                <span class="badge badge-success">Success</span>
+                                {% else %}
+                                <span class="badge badge-danger">Failed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Aadhaar ID:</th>
+                            <td>
+                                {% if log.aadhaar_id %}
+                                {{ log.aadhaar_id }}
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Reference ID:</th>
+                            <td>
+                                {% if log.reference_id %}
+                                <span class="text-monospace">{{ log.reference_id }}</span>
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>User:</th>
+                            <td>
+                                {% if user %}
+                                <a href="{{ url_for('profile') }}?user_id={{ user.id }}">{{ user.name }} ({{ user.email }})</a>
+                                {% else %}
+                                <span class="text-muted">Anonymous</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Session ID:</th>
+                            <td>
+                                {% if log.session_id %}
+                                <span class="text-monospace small">{{ log.session_id }}</span>
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            {% if log.error_message %}
+            <div class="alert alert-danger mt-3">
+                <h5 class="alert-heading">Error Message:</h5>
+                <p class="mb-0">{{ log.error_message }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Request Payload Card -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Request Payload</h6>
+                </div>
+                <div class="card-body">
+                    {% if log.request_payload %}
+                    <div class="bg-light p-3 rounded">
+                        <pre class="mb-0"><code>{{ log.request_payload|tojson(indent=4) }}</code></pre>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No request payload data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Response Payload Card -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Response Payload</h6>
+                </div>
+                <div class="card-body">
+                    {% if log.response_payload %}
+                    <div class="bg-light p-3 rounded">
+                        <pre class="mb-0"><code>{{ log.response_payload|tojson(indent=4) }}</code></pre>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No response payload data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Related Logs -->
+    {% if related_logs %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Related Logs (Same Session)</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Timestamp</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for related_log in related_logs %}
+                        <tr>
+                            <td>{{ related_log.id }}</td>
+                            <td>{{ related_log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                {% if related_log.request_type == 'token' %}
+                                <span class="badge badge-info">Auth Token</span>
+                                {% elif related_log.request_type == 'generate_otp' %}
+                                <span class="badge badge-primary">Generate OTP</span>
+                                {% elif related_log.request_type == 'verify_otp' %}
+                                <span class="badge badge-warning">Verify OTP</span>
+                                {% else %}
+                                <span class="badge badge-secondary">{{ related_log.request_type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if related_log.success %}
+                                <span class="badge badge-success">Success</span>
+                                {% else %}
+                                <span class="badge badge-danger">Failed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('aadhaar_log_detail', log_id=related_log.id) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-search"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

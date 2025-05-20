@@ -30,8 +30,8 @@ def save_file(file, subfolder):
     # Save the file
     try:
         file.save(file_path)
-        # Return the relative path to reference in the database
-        return os.path.join(subfolder, unique_filename)
+        # Return the URL path for the file
+        return f"/uploads/{subfolder}/{unique_filename}"
     except Exception as e:
         current_app.logger.error(f"Error saving file: {e}")
         return None

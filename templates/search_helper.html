@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block title %}Search Helpers - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Search for a Helper</h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Enter Aadhaar ID or name to search for an existing helper. If found, you can associate this helper with your account.
+                    </p>
+                    
+                    <form method="POST" action="{{ url_for('search_helper') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.search_term.label(class="form-label") }}
+                            {{ form.search_term(class="form-control", placeholder="Enter Aadhaar ID or helper name") }}
+                            {% if form.search_term.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.search_term.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>Can't find the helper? <a href="{{ url_for('create_helper') }}">Create a new helper profile</a></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
