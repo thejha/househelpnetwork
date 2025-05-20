@@ -88,14 +88,15 @@ class HelperProfile(db.Model):
     name = db.Column(db.String(100), nullable=False)  # Helper name
     helper_id = db.Column(db.String(50), unique=True, nullable=False)  # unique ID (Aadhar or DL based on type)
     helper_type = db.Column(db.String(20), nullable=False)  # 'maid' or 'driver'
-    gender = db.Column(db.String(10), nullable=False)  # 'male' or 'female'
+    gender = db.Column(db.String(10), nullable=True)  # 'male' or 'female'
     phone_number = db.Column(db.String(20), nullable=False)
     photo_url = db.Column(db.String(255), nullable=True)
-    state = db.Column(db.String(50), nullable=False)
+    state = db.Column(db.String(50), nullable=True)
     languages = db.Column(db.String(255), nullable=False)  # Comma-separated values or references to Language
     has_police_verification = db.Column(db.Boolean, default=False)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    verification_status = db.Column(db.String(20), default='Unverified')  # 'Unverified' or 'Verified'
     
     # Relationships
     documents = db.relationship('HelperDocument', backref='helper_profile', lazy=True)
@@ -103,17 +104,18 @@ class HelperProfile(db.Model):
     reviews = db.relationship('Review', backref='helper_profile', lazy=True)
     incident_reports = db.relationship('IncidentReport', backref='helper_profile', lazy=True)
     
-    def __init__(self, name, helper_id, helper_type, gender, phone_number, state, languages, created_by, photo_url=None, has_police_verification=False):
+    def __init__(self, name, helper_id, helper_type, phone_number, languages, created_by, photo_url=None, gender=None, state=None, has_police_verification=False, verification_status='Unverified'):
         self.name = name
         self.helper_id = helper_id
         self.helper_type = helper_type
-        self.gender = gender
         self.phone_number = phone_number
-        self.state = state
         self.languages = languages
         self.created_by = created_by
         self.photo_url = photo_url
+        self.gender = gender
+        self.state = state
         self.has_police_verification = has_police_verification
+        self.verification_status = verification_status
     
     def __repr__(self):
         return f'<HelperProfile {self.helper_id}>'

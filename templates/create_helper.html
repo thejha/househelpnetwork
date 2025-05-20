@@ -1,16 +1,20 @@
 {% extends "layout.html" %}
 
-{% block title %}Add New Helper - HouseHelpNetwork{% endblock %}
+{% block title %}Register Helper - HouseHelpNetwork{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1 class="mb-4">Add New Helper</h1>
+    <div class="mb-4">
+        <a href="{{ url_for('owner_dashboard') }}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
     
     <div class="row">
         <div class="col-lg-4 mb-4">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header">
-                    <h4 class="mb-0">Why Add a Helper?</h4>
+                    <h4 class="mb-0">Why Register a Helper?</h4>
                 </div>
                 <div class="card-body">
                     <p>By adding a helper to our database, you're helping:</p>
@@ -24,9 +28,8 @@
                     <div class="mt-4">
                         <h5>Documents to Keep Ready:</h5>
                         <ul>
-                            <li>Government ID (Aadhar/Voter ID/Driving License)</li>
+                            <li>Government ID (Aadhar/Driving License)</li>
                             <li>Recent photograph</li>
-                            <li>Previous work certificates (if available)</li>
                         </ul>
                     </div>
                 </div>
@@ -36,158 +39,78 @@
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0">Helper Information</h4>
+                    <h3 class="mb-0">Register New Helper</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST" enctype="multipart/form-data" class="needs-validation" id="helperForm" novalidate>
+                    <form method="POST" enctype="multipart/form-data" id="helperForm" class="needs-validation" novalidate>
                         {{ form.hidden_tag() }}
                         
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                {{ form.name.label(class="form-label") }}
-                                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
-                                {% if form.name.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.name.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.gender.label(class="form-label") }}
-                                {{ form.gender(class="form-select" + (" is-invalid" if form.gender.errors else "")) }}
-                                {% if form.gender.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.gender.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                {{ form.helper_type.label(class="form-label") }}
-                                {{ form.helper_type(class="form-select" + (" is-invalid" if form.helper_type.errors else ""), id="helper-type-select") }}
-                                {% if form.helper_type.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.helper_type.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <!-- Maid specific fields - shown only when Maid is selected -->
-                        <div class="maid-fields">
-                            <div class="row">
-                                <div class="col-md-12 mb-3">
-                                    {{ form.aadhar_id.label(class="form-label") }}
-                                    {{ form.aadhar_id(class="form-control" + (" is-invalid" if form.aadhar_id.errors else "")) }}
-                                    {% if form.aadhar_id.errors %}
-                                        <div class="invalid-feedback">
-                                            {% for error in form.aadhar_id.errors %}
-                                                {{ error }}
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                    <div class="form-text">12-digit Aadhar identification number</div>
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Enter helper's full name") }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
                                 </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                {{ form.aadhar_document.label(class="form-label") }}
-                                {{ form.aadhar_document(class="form-control" + (" is-invalid" if form.aadhar_document.errors else ""), accept=".jpg,.png,.pdf") }}
-                                {% if form.aadhar_document.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.aadhar_document.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                                <div class="form-text">Upload a scanned copy or clear photo of the Aadhar card</div>
-                            </div>
+                            {% endif %}
                         </div>
                         
-                        <!-- Driver specific fields - shown only when Driver is selected -->
-                        <div class="driver-fields" style="display: none;">
-                            <div class="row">
-                                <div class="col-md-12 mb-3">
-                                    {{ form.driving_license_id.label(class="form-label") }}
-                                    {{ form.driving_license_id(class="form-control" + (" is-invalid" if form.driving_license_id.errors else "")) }}
-                                    {% if form.driving_license_id.errors %}
-                                        <div class="invalid-feedback">
-                                            {% for error in form.driving_license_id.errors %}
-                                                {{ error }}
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                    <div class="form-text">Driving license number issued by RTO</div>
+                        <div class="mb-3">
+                            {{ form.helper_type.label(class="form-label") }}
+                            {{ form.helper_type(class="form-select" + (" is-invalid" if form.helper_type.errors else "")) }}
+                            {% if form.helper_type.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.helper_type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
                                 </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                {{ form.driving_license.label(class="form-label") }}
-                                {{ form.driving_license(class="form-control" + (" is-invalid" if form.driving_license.errors else ""), accept=".jpg,.png,.pdf") }}
-                                {% if form.driving_license.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.driving_license.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                                <div class="form-text">Upload a scanned copy or clear photo of the Driving License</div>
-                            </div>
+                            {% endif %}
                         </div>
                         
-                        <!-- Common fields for both helper types -->
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.phone_number.label(class="form-label") }}
-                                {{ form.phone_number(class="form-control" + (" is-invalid" if form.phone_number.errors else "")) }}
-                                {% if form.phone_number.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.phone_number.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                {{ form.state.label(class="form-label") }}
-                                {{ form.state(class="form-control" + (" is-invalid" if form.state.errors else "")) }}
-                                {% if form.state.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.state.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
+                        <!-- Conditional fields based on helper type -->
+                        <div class="mb-3 maid-field">
+                            {{ form.aadhar_id.label(class="form-label") }}
+                            {{ form.aadhar_id(class="form-control", placeholder="Enter 12-digit Aadhaar number") }}
+                            <div class="form-text">Enter the helper's Aadhaar number (12 digits)</div>
+                        </div>
+                        
+                        <div class="mb-3 driver-field d-none">
+                            {{ form.driving_license_id.label(class="form-label") }}
+                            {{ form.driving_license_id(class="form-control", placeholder="Enter driving license ID") }}
+                            <div class="form-text">Enter the helper's driving license ID</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.phone_number.label(class="form-label") }}
+                            {{ form.phone_number(class="form-control" + (" is-invalid" if form.phone_number.errors else ""), placeholder="Enter helper's phone number") }}
+                            {% if form.phone_number.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.phone_number.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">The phone number might be used for verification</div>
                         </div>
                         
                         <div class="mb-3">
                             {{ form.languages.label(class="form-label") }}
-                            {{ form.languages(class="form-select" + (" is-invalid" if form.languages.errors else ""), size="5") }}
+                            {{ form.languages(class="form-select" + (" is-invalid" if form.languages.errors else "")) }}
                             {% if form.languages.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.languages.errors %}
                                         {{ error }}
                                     {% endfor %}
                                 </div>
-                            {% else %}
-                                <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple languages</div>
                             {% endif %}
+                            <div class="form-text">Hold Ctrl/Cmd key to select multiple languages</div>
                         </div>
                         
-                        <div class="mb-3">
+                        <div class="mb-4">
                             {{ form.photo.label(class="form-label") }}
-                            {{ form.photo(class="form-control" + (" is-invalid" if form.photo.errors else ""), accept=".jpg,.jpeg,.png", id="photo-input") }}
+                            {{ form.photo(class="form-control" + (" is-invalid" if form.photo.errors else "")) }}
                             {% if form.photo.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.photo.errors %}
@@ -195,26 +118,15 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
-                            <div class="form-text">Upload a recent clear photo (JPG or PNG only)</div>
-                            <div class="mt-2">
-                                <img id="photo-preview" src="#" alt="Photo Preview" style="max-width: 150px; max-height: 150px; display: none;">
-                            </div>
+                            <div class="form-text">Upload a clear photo of the helper (optional)</div>
                         </div>
                         
-                        <div class="mb-4">
-                            {{ form.police_verification.label(class="form-label") }}
-                            {{ form.police_verification(class="form-control" + (" is-invalid" if form.police_verification.errors else ""), accept=".jpg,.png,.pdf") }}
-                            {% if form.police_verification.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.police_verification.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                            <div class="form-text">Optional document for previous police verification if available</div>
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> After registering the helper, you'll have the option to verify their Aadhaar details.
                         </div>
                         
-                        <div class="d-grid">
+                        <div class="d-grid gap-2">
                             {{ form.submit(class="btn btn-primary btn-lg") }}
                         </div>
                     </form>
@@ -224,63 +136,33 @@
     </div>
 </div>
 
+{% block extra_js %}
 <script>
+    // Toggle appropriate ID field based on helper type
     document.addEventListener('DOMContentLoaded', function() {
-        // Handle helper type changes
-        const helperTypeSelect = document.getElementById('helper-type-select');
-        const maidFields = document.querySelector('.maid-fields');
-        const driverFields = document.querySelector('.driver-fields');
+        const helperTypeSelect = document.getElementById('helper_type');
+        const maidFields = document.querySelectorAll('.maid-field');
+        const driverFields = document.querySelectorAll('.driver-field');
         
-        // Initialize based on default selection
-        toggleHelperFields(helperTypeSelect.value);
-        
-        // Add event listener for changes
-        helperTypeSelect.addEventListener('change', function() {
-            toggleHelperFields(this.value);
-        });
-        
-        function toggleHelperFields(helperType) {
+        function toggleFields() {
+            const helperType = helperTypeSelect.value;
+            
             if (helperType === 'maid') {
-                maidFields.style.display = 'block';
-                driverFields.style.display = 'none';
-                
-                // Make maid fields required
-                document.querySelector('[name="aadhar_id"]').setAttribute('required', '');
-                document.querySelector('[name="aadhar_document"]').setAttribute('required', '');
-                
-                // Make driver fields not required
-                document.querySelector('[name="driving_license_id"]').removeAttribute('required');
-                document.querySelector('[name="driving_license"]').removeAttribute('required');
-            } else if (helperType === 'driver') {
-                maidFields.style.display = 'none';
-                driverFields.style.display = 'block';
-                
-                // Make driver fields required
-                document.querySelector('[name="driving_license_id"]').setAttribute('required', '');
-                document.querySelector('[name="driving_license"]').setAttribute('required', '');
-                
-                // Make maid fields not required
-                document.querySelector('[name="aadhar_id"]').removeAttribute('required');
-                document.querySelector('[name="aadhar_document"]').removeAttribute('required');
+                maidFields.forEach(field => field.classList.remove('d-none'));
+                driverFields.forEach(field => field.classList.add('d-none'));
+            } else {
+                maidFields.forEach(field => field.classList.add('d-none'));
+                driverFields.forEach(field => field.classList.remove('d-none'));
             }
         }
         
-        // Photo preview
-        document.querySelector('[name="photo"]').addEventListener('change', function(event) {
-            const photoPreview = document.getElementById('photo-preview');
-            const file = event.target.files[0];
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    photoPreview.src = e.target.result;
-                    photoPreview.style.display = 'block';
-                }
-                reader.readAsDataURL(file);
-            } else {
-                photoPreview.style.display = 'none';
-            }
-        });
+        // Initial toggle
+        toggleFields();
+        
+        // Toggle when selection changes
+        helperTypeSelect.addEventListener('change', toggleFields);
     });
 </script>
+{% endblock %}
+
 {% endblock %}

@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+
+{% block title %}Verify Helper - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Helper Profile
+        </a>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex align-items-center">
+                    <h3 class="mb-0">Verify Helper</h3>
+                    {% if helper.verification_status == 'Verified' %}
+                        <span class="badge bg-success ms-3">Verified</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark ms-3">Unverified</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-4">
+                        {% if helper.photo_url %}
+                            <img src="{{ helper.photo_url }}" alt="{{ helper.name }}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle me-3 d-flex align-items-center justify-content-center bg-light" style="width: 60px; height: 60px;">
+                                <i class="fas fa-user text-primary-purple fa-2x"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h5 class="mb-1">{{ helper.name }}</h5>
+                            <p class="mb-0 text-muted">{{ helper.helper_type|title }} | {{ helper.helper_id }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Verification Process:</strong> We'll send an OTP to the mobile number linked with this Aadhaar.
+                    </div>
+                    
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-4">
+                            {{ form.aadhaar_id.label(class="form-label") }}
+                            {% if helper.helper_type == 'maid' %}
+                                {{ form.aadhaar_id(class="form-control" + (" is-invalid" if form.aadhaar_id.errors else ""), readonly=true) }}
+                                <div class="form-text">This is the Aadhaar number provided during registration</div>
+                            {% else %}
+                                {{ form.aadhaar_id(class="form-control" + (" is-invalid" if form.aadhaar_id.errors else ""), placeholder="Enter 12-digit Aadhaar number") }}
+                                <div class="form-text">Enter the helper's 12-digit Aadhaar number</div>
+                            {% endif %}
+                            {% if form.aadhaar_id.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.aadhaar_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Why Verify Helpers?</h5>
+                </div>
+                <div class="card-body">
+                    <p>Verifying your helpers through Aadhaar provides several benefits:</p>
+                    <ul>
+                        <li>Confirms the helper's real identity</li>
+                        <li>Verifies their personal information</li>
+                        <li>Increases trust and safety in your home</li>
+                        <li>Helps build a trusted community database</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

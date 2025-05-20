@@ -84,7 +84,6 @@ class OwnerProfileForm(FlaskForm):
 
 class HelperProfileForm(FlaskForm):
     name = StringField('Helper Name', validators=[DataRequired(), Length(min=2, max=100)])
-    gender = SelectField('Gender', choices=[('male', 'Male'), ('female', 'Female')], validators=[DataRequired()])
     helper_type = SelectField('Helper Type', choices=[('maid', 'Maid'), ('driver', 'Driver')], validators=[DataRequired()])
     
     # Maid specific fields (shown conditionally)
@@ -94,17 +93,19 @@ class HelperProfileForm(FlaskForm):
     driving_license_id = StringField('Driving License ID', validators=[])
     
     phone_number = StringField('Phone Number', validators=[DataRequired(), Length(min=10, max=15)])
-    state = StringField('State', validators=[DataRequired()])
     languages = SelectMultipleField('Languages Spoken', choices=[], validators=[DataRequired()], render_kw={"multiple": "multiple", "class": "form-select"})
     
-    photo = FileField('Upload Photo', validators=[FileAllowed(['jpg', 'png'], 'Images only')])
+    photo = FileField('Upload Photo (Optional)', validators=[FileAllowed(['jpg', 'png'], 'Images only')])
     
-    # Document uploads
-    aadhar_document = FileField('Upload Aadhar Document', validators=[FileAllowed(['jpg', 'png', 'pdf'], 'Images and PDFs only')])
-    driving_license = FileField('Upload Driving License', validators=[FileAllowed(['jpg', 'png', 'pdf'], 'Images and PDFs only')])
-    police_verification = FileField('Previous Police Verification Document (Optional)', validators=[FileAllowed(['jpg', 'png', 'pdf'], 'Images and PDFs only')])
-    
-    submit = SubmitField('Create Helper Profile')
+    submit = SubmitField('Register Helper')
+
+class HelperAadhaarVerificationForm(FlaskForm):
+    aadhaar_id = StringField('Aadhaar Number', validators=[
+        DataRequired(), 
+        Length(min=12, max=12, message="Aadhaar number must be 12 digits"),
+        Regexp('^\d{12}$', message="Aadhaar number must be 12 digits")
+    ])
+    submit = SubmitField('Verify Aadhaar')
 
 class ContractForm(FlaskForm):
     helper_id = HiddenField('Helper ID')

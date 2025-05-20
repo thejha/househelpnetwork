@@ -28,6 +28,11 @@ def register_routes(app):
     # Home route
     @app.route('/')
     def index():
+        if current_user.is_authenticated:
+            if current_user.role == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            else:
+                return redirect(url_for('owner_dashboard'))
         return render_template('index.html', 
                               title='HouseHelpNetwork - India\'s First Peer-Verified Household Help Platform')
     
@@ -175,8 +180,11 @@ def register_routes(app):
                 session.pop('aadhaar_reference_id', None)
                 session.pop('registration_flow', None)
                 
-                flash('Your account has been created with verified Aadhaar details! You can now log in.', 'success')
-                return redirect(url_for('login'))
+                # Log in the user automatically after registration
+                login_user(user)
+                
+                flash('Your account has been created with verified Aadhaar details! Welcome to HouseHelpNetwork.', 'success')
+                return redirect(url_for('owner_dashboard'))
             except Exception as e:
                 db.session.rollback()
                 app.logger.error(f"Error creating user: {str(e)}")
@@ -187,7 +195,7 @@ def register_routes(app):
     @app.route('/login', methods=['GET', 'POST'])
     def login():
         if current_user.is_authenticated:
-            return redirect(url_for('index'))
+            return redirect(url_for('owner_dashboard'))
         
         form = LoginForm()
         if form.validate_on_submit():
@@ -203,7 +211,11 @@ def register_routes(app):
                 
                 next_page = request.args.get('next')
                 flash('Login successful!', 'success')
-                return redirect(next_page) if next_page else redirect(url_for('index'))
+                if next_page:
+                    return redirect(next_page)
+                else:
+                    # Redirect to dashboard instead of index
+                    return redirect(url_for('owner_dashboard'))
             else:
                 flash('Login unsuccessful. Please check email and password.', 'danger')
         
@@ -443,16 +455,6 @@ def register_routes(app):
                     flash('Failed to upload photo. Please try again.', 'danger')
                     return render_template('create_helper.html', form=form)
             
-            # Check for police verification
-            has_police_verification = False
-            if form.police_verification.data and form.police_verification.data.filename:
-                has_police_verification = True
-                # Save the police verification document
-                police_url = save_file(form.police_verification.data, 'helper_documents')
-                if not police_url:
-                    flash('Failed to upload police verification document. Please try again.', 'danger')
-                    return render_template('create_helper.html', form=form)
-            
             # Get the selected languages
             language_ids = form.languages.data or []  # Handle case when no languages are selected
             language_names = []
@@ -462,61 +464,23 @@ def register_routes(app):
                     language_names.append(language_obj.name)
             language_str = ", ".join(language_names)
             
-            # Create helper profile
+            # Create helper profile with minimal information
             helper = HelperProfile(
                 name=form.name.data,
                 helper_id=helper_id,
                 helper_type=form.helper_type.data,
-                gender=form.gender.data,
                 phone_number=form.phone_number.data,
                 photo_url=photo_url,
-                state=form.state.data,
                 languages=language_str,
-                has_police_verification=has_police_verification,
-                created_by=current_user.id
+                created_by=current_user.id,
+                verification_status='Unverified'
             )
             
             db.session.add(helper)
             db.session.commit()
             
-            # Handle document uploads based on helper type
-            if form.helper_type.data == 'maid' and form.aadhar_document.data and form.aadhar_document.data.filename:
-                document_url = save_file(form.aadhar_document.data, 'helper_documents')
-                if document_url:
-                    helper_doc = HelperDocument(
-                        helper_profile_id=helper.id,
-                        type='aadhar',
-                        url=document_url
-                    )
-                    db.session.add(helper_doc)
-                else:
-                    flash('Failed to upload Aadhar document, but helper profile was created.', 'warning')
-            
-            elif form.helper_type.data == 'driver' and form.driving_license.data and form.driving_license.data.filename:
-                document_url = save_file(form.driving_license.data, 'helper_documents')
-                if document_url:
-                    helper_doc = HelperDocument(
-                        helper_profile_id=helper.id,
-                        type='driving_license',
-                        url=document_url
-                    )
-                    db.session.add(helper_doc)
-                else:
-                    flash('Failed to upload Driving License document, but helper profile was created.', 'warning')
-            
-            # Police verification document is already saved above, just add the record
-            if has_police_verification and form.police_verification.data and form.police_verification.data.filename:
-                police_url = save_file(form.police_verification.data, 'helper_documents')
-                if police_url:
-                    helper_doc = HelperDocument(
-                        helper_profile_id=helper.id,
-                        type='police_verification',
-                        url=police_url
-                    )
-                    db.session.add(helper_doc)
-            
-            db.session.commit()
-            flash('Helper profile created successfully!', 'success')
+            flash('Helper profile created successfully! You can now verify their Aadhaar details.', 'success')
+            # Redirect to a helper verification page in the future
             return redirect(url_for('helper_detail', helper_id=helper.helper_id))
         
         return render_template('create_helper.html', form=form)
@@ -1027,3 +991,119 @@ def register_routes(app):
         
         flash(f'Profile {status.lower()} successfully!', 'success')
         return redirect(url_for('verify_users'))
+
+    # Owner Dashboard route
+    @app.route('/dashboard')
+    @login_required
+    def owner_dashboard():
+        """Dashboard for owners showing their helpers and contracts"""
+        # Get helpers created by this user
+        helpers = HelperProfile.query.filter_by(created_by=current_user.id).all()
+        helpers_count = len(helpers)
+        
+        # Get contracts for this user
+        contracts = Contract.query.filter_by(owner_id=current_user.id).all()
+        
+        return render_template('owner_dashboard.html', 
+                              helpers=helpers,
+                              helpers_count=helpers_count,
+                              contracts=contracts)
+
+    @app.route('/helpers/<helper_id>/verify', methods=['GET', 'POST'])
+    @login_required
+    def verify_helper_aadhaar(helper_id):
+        helper = HelperProfile.query.filter_by(helper_id=helper_id).first_or_404()
+        
+        # Check if the current user created this helper profile
+        if helper.created_by != current_user.id:
+            flash('You can only verify helpers that you have added.', 'danger')
+            return redirect(url_for('owner_dashboard'))
+        
+        # Check if helper is already verified
+        if helper.verification_status == 'Verified':
+            flash('This helper is already verified.', 'info')
+            return redirect(url_for('helper_detail', helper_id=helper_id))
+        
+        form = HelperAadhaarVerificationForm()
+        
+        # If helper_type is maid, pre-populate the form with the Aadhaar ID
+        if helper.helper_type == 'maid' and request.method == 'GET':
+            form.aadhaar_id.data = helper.helper_id
+        
+        if form.validate_on_submit():
+            aadhaar_id = form.aadhaar_id.data
+            
+            # Check if helper_id and input Aadhaar match for maid type
+            if helper.helper_type == 'maid' and helper.helper_id != aadhaar_id:
+                flash('The Aadhaar number does not match the one used during registration.', 'danger')
+                return redirect(url_for('verify_helper_aadhaar', helper_id=helper_id))
+            
+            # Call Aadhaar API to generate OTP
+            response = generate_aadhaar_otp(aadhaar_id)
+            
+            if response["success"]:
+                # Store reference_id in session for OTP verification
+                session['helper_aadhaar_reference_id'] = response["reference_id"]
+                session['helper_aadhaar_id'] = aadhaar_id
+                session['helper_id'] = helper_id
+                
+                flash(f'OTP sent to the registered mobile number. {response["message"]}', 'success')
+                return redirect(url_for('verify_helper_aadhaar_otp', helper_id=helper_id))
+            else:
+                flash(f'Failed to send OTP: {response["message"]}', 'danger')
+        
+        return render_template('verify_helper.html', form=form, helper=helper)
+    
+    @app.route('/helpers/<helper_id>/verify-otp', methods=['GET', 'POST'])
+    @login_required
+    def verify_helper_aadhaar_otp(helper_id):
+        # Check if we have necessary session data
+        if 'helper_aadhaar_reference_id' not in session or 'helper_aadhaar_id' not in session or 'helper_id' not in session:
+            flash('Please start the verification process again.', 'warning')
+            return redirect(url_for('verify_helper_aadhaar', helper_id=helper_id))
+        
+        # Check if the helper_id in URL matches the one in session
+        if helper_id != session['helper_id']:
+            flash('Invalid verification request.', 'danger')
+            return redirect(url_for('owner_dashboard'))
+        
+        helper = HelperProfile.query.filter_by(helper_id=helper_id).first_or_404()
+        
+        form = AadhaarOTPForm()
+        
+        if form.validate_on_submit():
+            otp = form.otp.data
+            reference_id = form.reference_id.data or session['helper_aadhaar_reference_id']
+            
+            # Call Sandbox API to verify OTP
+            response = verify_aadhaar_otp(reference_id, otp)
+            
+            if response["success"]:
+                user_details = response.get("user_details", {})
+                address_dict = user_details.get("address", {})
+                
+                # Update helper profile with Aadhaar details
+                helper.verification_status = 'Verified'
+                
+                # Update other fields with Aadhaar data
+                if user_details.get("name"):
+                    helper.name = user_details.get("name")
+                if user_details.get("gender"):
+                    helper.gender = user_details.get("gender")
+                if address_dict.get("state"):
+                    helper.state = address_dict.get("state")
+                
+                db.session.commit()
+                
+                # Clear session data
+                session.pop('helper_aadhaar_reference_id', None)
+                session.pop('helper_aadhaar_id', None)
+                session.pop('helper_id', None)
+                
+                flash('Helper verified successfully!', 'success')
+                return redirect(url_for('helper_detail', helper_id=helper_id))
+            else:
+                flash(f'Failed to verify OTP: {response["message"]}', 'danger')
+        
+        reference_id = session.get('helper_aadhaar_reference_id', '')
+        return render_template('verify_helper_otp.html', form=form, reference_id=reference_id, helper=helper)

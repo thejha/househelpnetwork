@@ -1,0 +1,214 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Owner Dashboard</h1>
+    
+    <!-- Quick Action Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-plus fa-3x text-primary-purple mb-3"></i>
+                    <h5 class="card-title">Register Helper</h5>
+                    <p class="card-text">Add a new household helper to your profile.</p>
+                    <a href="{{ url_for('create_helper') }}" class="btn btn-primary">Register Helper</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-file-contract fa-3x text-primary-purple mb-3"></i>
+                    <h5 class="card-title">Create Contract</h5>
+                    <p class="card-text">Create a new contract with your helper.</p>
+                    {% if helpers_count > 0 %}
+                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectHelperModal">Create Contract</a>
+                    {% else %}
+                        <button class="btn btn-primary" disabled>Create Contract</button>
+                        <small class="d-block mt-2 text-muted">Register a helper first</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-3x text-primary-purple mb-3"></i>
+                    <h5 class="card-title">Verify Helper</h5>
+                    <p class="card-text">Verify the credentials of a household helper.</p>
+                    <a href="{{ url_for('search') }}" class="btn btn-primary">Verify Helper</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contracts Section -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Your Contracts</h4>
+            {% if helpers_count > 0 %}
+                <a href="#" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#selectHelperModal">
+                    <i class="fas fa-plus me-1"></i> New Contract
+                </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if contracts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Helper Name</th>
+                                <th>Contract ID</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Monthly Salary</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contract in contracts %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('helper_detail', helper_id=contract.helper_profile.helper_id) }}">
+                                            {{ contract.helper_profile.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ contract.contract_id }}</td>
+                                    <td>{{ contract.start_date.strftime('%d %b, %Y') }}</td>
+                                    <td>
+                                        {% if contract.end_date %}
+                                            {{ contract.end_date.strftime('%d %b, %Y') }}
+                                        {% else %}
+                                            Ongoing
+                                        {% endif %}
+                                    </td>
+                                    <td>₹{{ contract.monthly_salary }}</td>
+                                    <td>
+                                        <a href="{{ url_for('helper_detail', helper_id=contract.helper_profile.helper_id) }}" class="btn btn-sm btn-light">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-contract fa-4x text-muted mb-3"></i>
+                    <h5>No Contracts Yet</h5>
+                    <p class="text-muted">You haven't created any contracts yet. Start by registering a helper first.</p>
+                    <a href="{{ url_for('create_helper') }}" class="btn btn-primary">Register Helper</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Helpers Section -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Your Helpers</h4>
+            <a href="{{ url_for('create_helper') }}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus me-1"></i> Add Helper
+            </a>
+        </div>
+        <div class="card-body">
+            {% if helpers %}
+                <div class="row">
+                    {% for helper in helpers %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        {% if helper.photo_url %}
+                                            <img src="{{ helper.photo_url }}" alt="{{ helper.name }}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="rounded-circle me-3 d-flex align-items-center justify-content-center bg-light" style="width: 60px; height: 60px;">
+                                                <i class="fas fa-user text-primary-purple fa-2x"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <h5 class="mb-1">{{ helper.name }}</h5>
+                                            <div class="d-flex align-items-center">
+                                                <p class="mb-0 text-muted">{{ helper.helper_type|title }}</p>
+                                                {% if helper.verification_status == 'Verified' %}
+                                                    <span class="badge bg-success ms-2">Verified</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark ms-2">Unverified</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p><strong>ID:</strong> {{ helper.helper_id }}</p>
+                                    <p><strong>Phone:</strong> {{ helper.phone_number }}</p>
+                                    <p><strong>Added:</strong> {{ helper.created_at.strftime('%d %b, %Y') }}</p>
+                                    
+                                    <div class="d-flex gap-2 mt-3">
+                                        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-primary flex-grow-1">View Profile</a>
+                                        {% if helper.verification_status != 'Verified' %}
+                                            <a href="{{ url_for('verify_helper_aadhaar', helper_id=helper.helper_id) }}" class="btn btn-outline-success">
+                                                <i class="fas fa-check-circle"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-user-tie fa-4x text-muted mb-3"></i>
+                    <h5>No Helpers Added</h5>
+                    <p class="text-muted">You haven't added any helpers yet.</p>
+                    <a href="{{ url_for('create_helper') }}" class="btn btn-primary">Register Helper</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Select Helper Modal -->
+{% if helpers %}
+<div class="modal fade" id="selectHelperModal" tabindex="-1" aria-labelledby="selectHelperModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="selectHelperModalLabel">Select Helper for Contract</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    {% for helper in helpers %}
+                        <a href="{{ url_for('create_contract', helper_id=helper.helper_id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex align-items-center">
+                                {% if helper.photo_url %}
+                                    <img src="{{ helper.photo_url }}" alt="{{ helper.name }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                {% else %}
+                                    <div class="rounded-circle me-3 d-flex align-items-center justify-content-center bg-light" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user text-primary-purple"></i>
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <h6 class="mb-0">{{ helper.name }}</h6>
+                                    <small class="text-muted">{{ helper.helper_type|title }} | {{ helper.helper_id }}</small>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

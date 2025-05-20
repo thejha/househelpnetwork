@@ -23,12 +23,6 @@
                         </a>
                     </li>
                     
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == url_for('profile') %}active{% endif %}" href="{{ url_for('profile') }}">
-                            <i class="fas fa-user"></i> My Profile
-                        </a>
-                    </li>
-                    
                     {% if current_user.role == 'admin' %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -52,7 +46,19 @@
                                 </li>
                             </ul>
                         </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == url_for('owner_dashboard') %}active{% endif %}" href="{{ url_for('owner_dashboard') }}">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
                     {% endif %}
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('profile') %}active{% endif %}" href="{{ url_for('profile') }}">
+                            <i class="fas fa-user-circle"></i> Profile
+                        </a>
+                    </li>
                     
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('logout') }}">

@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask
+from flask import Flask, request, jsonify
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import config
 from extensions import db, login_manager, bcrypt, csrf
@@ -44,3 +44,28 @@ def create_app(config_name='default'):
 
 # Create the application instance using environment variable or default to development
 app = create_app(os.getenv('FLASK_ENV', 'development'))
+
+@app.route('/api/check-aadhaar', methods=['POST'])
+def check_aadhaar():
+    data = request.get_json()
+    aadhaar_id = data.get('aadhaar_id')
+    
+    if not aadhaar_id:
+        return jsonify({'error': 'Aadhaar ID is required'}), 400
+        
+    try:
+        cursor = get_db().cursor()
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM owner_profiles 
+            WHERE aadhaar_id = %s
+        """, (aadhaar_id,))
+        
+        count = cursor.fetchone()[0]
+        return jsonify({
+            'available': count == 0,
+            'message': 'Aadhaar number is already registered' if count > 0 else 'Aadhaar number is available'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

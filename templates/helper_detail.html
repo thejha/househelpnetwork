@@ -13,47 +13,48 @@
     <div class="row">
         <!-- Helper Profile Card -->
         <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">Helper Profile</h3>
-                </div>
-                <div class="card-body text-center">
-                    {% if helper.photo_url %}
-                        <img src="{{ helper.photo_url }}" alt="Helper Photo" class="img-fluid rounded-circle mb-3" style="max-width: 150px; max-height: 150px;">
-                    {% else %}
-                        <div class="avatar-placeholder mb-3">
-                            <i class="fas fa-user-circle fa-6x text-primary-purple"></i>
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        {% if helper.photo_url %}
+                            <img src="{{ helper.photo_url }}" alt="{{ helper.name }}" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center bg-light" style="width: 150px; height: 150px;">
+                                <i class="fas fa-user text-primary-purple fa-4x"></i>
+                            </div>
+                        {% endif %}
+                        <h3 class="mb-0">{{ helper.name }}</h3>
+                        <div class="d-flex justify-content-center align-items-center mt-2">
+                            <p class="text-muted mb-0">{{ helper.helper_type|title }}</p>
+                            {% if helper.verification_status == 'Verified' %}
+                                <span class="badge bg-success ms-2">Verified</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark ms-2">Unverified</span>
+                            {% endif %}
                         </div>
+                    </div>
+                    
+                    <!-- Verification Action Button -->
+                    {% if helper.verification_status != 'Verified' and helper.created_by == current_user.id %}
+                    <div class="d-grid mb-4">
+                        <a href="{{ url_for('verify_helper_aadhaar', helper_id=helper.helper_id) }}" class="btn btn-primary">
+                            <i class="fas fa-check-circle me-2"></i>Verify Helper
+                        </a>
+                    </div>
                     {% endif %}
                     
-                    <h4 class="mb-3">{{ helper.name }}</h4>
-                    <p class="text-muted">ID: {{ helper.helper_id }}</p>
-                    
-                    <div class="text-center mb-4">
-                        {% if avg_ratings %}
-                            <div class="d-flex justify-content-center align-items-center">
-                                <div class="rating-display" data-rating="{{ avg_ratings.overall }}"></div>
-                            </div>
-                            <p class="text-muted mb-0">{{ reviews|length }} reviews</p>
-                        {% else %}
-                            <p class="text-muted">No reviews yet</p>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="d-grid gap-2">
-                        <a href="{{ url_for('create_contract', helper_id=helper.helper_id) }}" class="btn btn-primary">
-                            <i class="fas fa-file-contract me-2"></i>Create Contract
-                        </a>
-                        <a href="{{ url_for('create_review', helper_id=helper.helper_id) }}" class="btn btn-secondary">
-                            <i class="fas fa-star me-2"></i>Write Review
-                        </a>
-                        <a href="{{ url_for('report_incident', helper_id=helper.helper_id) }}" class="btn btn-light">
-                            <i class="fas fa-exclamation-triangle me-2"></i>Report Incident
-                        </a>
-                        <a href="{{ url_for('owner_connect', helper_id=helper.helper_id) }}" class="btn btn-light">
-                            <i class="fas fa-users me-2"></i>Connect with Previous Owner
-                        </a>
-                    </div>
+                    <!-- Helper details information -->
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-id-card me-2"></i>ID:</span>
+                            <span class="text-muted">{{ helper.helper_id }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-phone me-2"></i>Phone:</span>
+                            <span class="text-muted">{{ helper.phone_number }}</span>
+                        </li>
+                        <!-- Continue with other helper details -->
+                    </ul>
                 </div>
             </div>
         </div>

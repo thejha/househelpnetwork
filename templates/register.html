@@ -37,4 +37,57 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const aadhaarInput = document.getElementById('aadhaar_id');
+    const aadhaarFeedback = document.createElement('div');
+    aadhaarFeedback.className = 'invalid-feedback';
+    aadhaarInput.parentNode.appendChild(aadhaarFeedback);
+    
+    let debounceTimer;
+    
+    aadhaarInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const aadhaarNumber = this.value.trim();
+        
+        // Basic Aadhaar format validation (12 digits)
+        if (!/^\d{12}$/.test(aadhaarNumber)) {
+            this.classList.remove('is-valid');
+            this.classList.add('is-invalid');
+            aadhaarFeedback.textContent = 'Aadhaar number must be 12 digits';
+            return;
+        }
+        
+        // Debounce the API call to avoid too many requests
+        debounceTimer = setTimeout(() => {
+            fetch('/api/check-aadhaar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ aadhaar_id: aadhaarNumber })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.available) {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                    aadhaarFeedback.textContent = 'Aadhaar number is available';
+                } else {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                    aadhaarFeedback.textContent = data.message;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+                aadhaarFeedback.textContent = 'Error checking Aadhaar number';
+            });
+        }, 500); // Wait for 500ms after user stops typing
+    });
+});
+</script>
 {% endblock %}
