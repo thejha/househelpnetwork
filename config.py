@@ -7,20 +7,17 @@ load_dotenv()
 class Config:
     """Base configuration class."""
     # Secret key for session management
-    SECRET_KEY = os.environ.get("SESSION_SECRET", "househelpnetwork_secret_key")
+    SECRET_KEY = "househelpnetwork_secret_key"
     
     # Database settings
-    POSTGRES_USER = os.environ.get("POSTGRES_USER", "postgres")
-    POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "rmivuxg")
-    POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
-    POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
-    POSTGRES_DB = os.environ.get("POSTGRES_DB", "househelpnetwork")
+    MYSQL_USER = "root"
+    MYSQL_PASSWORD = "rmivuxg"
+    MYSQL_HOST = "localhost"
+    MYSQL_PORT = "3306"
+    MYSQL_DATABASE = "househelpnetwork"
     
-    # Build PostgreSQL connection string
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", 
-        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-    )
+    # Build MySQL connection string
+    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
     
     # Flask-SQLAlchemy settings
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -34,8 +31,8 @@ class Config:
     UPLOAD_FOLDER = "static/uploads"
     
     # Uploadcare API keys
-    UPLOADCARE_PUBLIC_KEY = os.environ.get("UPLOADCARE_PUBLIC_KEY", "key_live_5FG3zMrDHspKWq5ifOBYBi5J3rcadaGK")
-    UPLOADCARE_SECRET_KEY = os.environ.get("UPLOADCARE_SECRET_KEY", "secret_live_qRHK9amHpJhX3Txja8Aw1pIqMBPA2pTy")
+    UPLOADCARE_PUBLIC_KEY = "key_live_5FG3zMrDHspKWq5ifOBYBi5J3rcadaGK"
+    UPLOADCARE_SECRET_KEY = "secret_live_qRHK9amHpJhX3Txja8Aw1pIqMBPA2pTy"
 
 
 class DevelopmentConfig(Config):
@@ -46,6 +43,10 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     """Production configuration."""
     DEBUG = False
+    # Production MySQL settings can be overridden here if needed
+    MYSQL_HOST = "production-db-server"
+    # Update the database URI with production settings
+    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{Config.MYSQL_USER}:{Config.MYSQL_PASSWORD}@{MYSQL_HOST}:{Config.MYSQL_PORT}/{Config.MYSQL_DATABASE}"
 
 
 # Configuration dictionary to select the appropriate configuration

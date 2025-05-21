@@ -7,8 +7,7 @@ This script will:
 """
 import os
 import sys
-import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+import mysql.connector
 from app import app, db
 from models import Language, PincodeMapping, User, HelperProfile, HelperDocument
 import seed_languages
@@ -20,34 +19,33 @@ logger = logging.getLogger(__name__)
 
 def create_database():
     # Get database configuration from environment variables or use defaults
-    postgres_user = os.environ.get("POSTGRES_USER", "postgres")
-    postgres_password = os.environ.get("POSTGRES_PASSWORD", "postgres")
-    postgres_host = os.environ.get("POSTGRES_HOST", "localhost")
-    postgres_port = os.environ.get("POSTGRES_PORT", "5432")
-    postgres_db = os.environ.get("POSTGRES_DB", "househelpnetwork")
+    mysql_user = os.environ.get("MYSQL_USER", "root")
+    mysql_password = os.environ.get("MYSQL_PASSWORD", "rmivuxg")
+    mysql_host = os.environ.get("MYSQL_HOST", "localhost")
+    mysql_port = os.environ.get("MYSQL_PORT", "3306")
+    mysql_database = os.environ.get("MYSQL_DATABASE", "househelpnetwork")
     
-    # Connect to PostgreSQL server
+    # Connect to MySQL server
     try:
-        print(f"Connecting to PostgreSQL server at {postgres_host}:{postgres_port}...")
-        conn = psycopg2.connect(
-            user=postgres_user,
-            password=postgres_password,
-            host=postgres_host,
-            port=postgres_port
+        print(f"Connecting to MySQL server at {mysql_host}:{mysql_port}...")
+        conn = mysql.connector.connect(
+            user=mysql_user,
+            password=mysql_password,
+            host=mysql_host,
+            port=mysql_port
         )
-        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cursor = conn.cursor()
         
         # Check if database exists
-        cursor.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{postgres_db}'")
+        cursor.execute(f"SHOW DATABASES LIKE '{mysql_database}'")
         exists = cursor.fetchone()
         
         if not exists:
-            print(f"Creating database '{postgres_db}'...")
-            cursor.execute(f"CREATE DATABASE {postgres_db}")
-            print(f"Database '{postgres_db}' created successfully.")
+            print(f"Creating database '{mysql_database}'...")
+            cursor.execute(f"CREATE DATABASE {mysql_database}")
+            print(f"Database '{mysql_database}' created successfully.")
         else:
-            print(f"Database '{postgres_db}' already exists.")
+            print(f"Database '{mysql_database}' already exists.")
         
         cursor.close()
         conn.close()

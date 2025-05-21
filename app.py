@@ -3,12 +3,27 @@ import logging
 import re
 from flask import Flask, request, jsonify
 from werkzeug.middleware.proxy_fix import ProxyFix
+import mysql.connector
 from config import config
 from extensions import db, login_manager, bcrypt, csrf
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+def get_db(config_name='default'):
+    """Get a MySQL database connection using settings from config."""
+    # Get the appropriate configuration
+    app_config = config[config_name]
+    
+    conn = mysql.connector.connect(
+        user=app_config.MYSQL_USER,
+        password=app_config.MYSQL_PASSWORD,
+        host=app_config.MYSQL_HOST,
+        port=app_config.MYSQL_PORT,
+        database=app_config.MYSQL_DATABASE
+    )
+    return conn
 
 def slugify(value):
     """
@@ -79,7 +94,9 @@ def check_aadhaar():
         return jsonify({'error': 'Aadhaar ID is required'}), 400
         
     try:
-        cursor = get_db().cursor()
+        # Use the same configuration as the Flask app
+        conn = get_db(os.getenv('FLASK_ENV', 'development'))
+        cursor = conn.cursor()
         cursor.execute("""
             SELECT COUNT(*) 
             FROM owner_profiles 
@@ -87,6 +104,9 @@ def check_aadhaar():
         """, (aadhaar_id,))
         
         count = cursor.fetchone()[0]
+        cursor.close()
+        conn.close()
+        
         return jsonify({
             'available': count == 0,
             'message': 'Aadhaar number is already registered' if count > 0 else 'Aadhaar number is available'
