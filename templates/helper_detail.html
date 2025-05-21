@@ -4,6 +4,25 @@
 
 {% block content %}
 <div class="container">
+    <!-- Debug info at the top of the page -->
+    {% if current_user.role == 'admin' %}
+    <div class="alert alert-info">
+        <h5>Debug Info</h5>
+        <p>Helper has {{ reviews|length }} reviews.</p>
+        {% for review in reviews %}
+        <p>Review #{{ review.review_id }}: {{ review.overall_rating }}</p>
+        {% endfor %}
+        
+        {% if reviews|length > 0 %}
+        {% set total = 0 %}
+        {% for review in reviews %}
+        {% set total = total + review.overall_rating %}
+        {% endfor %}
+        <p>Average rating: {{ total / reviews|length }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
     <div class="mb-4">
         <a href="{{ url_for('search_helper') }}" class="btn btn-light">
             <i class="fas fa-arrow-left me-2"></i>Back to Search
@@ -33,6 +52,21 @@
                                 <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-circle me-1"></i> Unverified</span>
                             {% endif %}
                         </div>
+                        
+                        <!-- Overall Rating Display -->
+                        {% if reviews and reviews|length > 0 %}
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-center align-items-center">
+                                    <div class="display-6 fw-bold text-success">{{ "%.1f"|format(avg_rating) }}</div>
+                                    <div class="ms-2">
+                                        <i class="fas fa-star text-warning"></i>
+                                    </div>
+                                </div>
+                                <div class="text-muted small">
+                                    Based on {{ reviews|length }} review{% if reviews|length != 1 %}s{% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
                     
                     <div class="mb-4">
@@ -263,6 +297,128 @@
                         </div>
                     {% else %}
                         <div class="alert alert-info">No owners associated with this helper.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reviews Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Performance Reviews</h5>
+                    <a href="{{ url_for('helper_reviews', helper_id=helper.helper_id) }}" class="btn btn-sm btn-light">
+                        View All Reviews
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if reviews and reviews|length > 0 %}
+                        <div class="row">
+                            <div class="col-md-4 mb-4">
+                                <div class="text-center">
+                                    <div class="display-4 text-success fw-bold mb-2">{{ "%.1f"|format(avg_rating) }}</div>
+                                    <div class="text-muted">Overall Rating</div>
+                                    <div class="mt-1">
+                                        <small class="text-muted">Based on {{ reviews|length }} review{% if reviews|length != 1 %}s{% endif %}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <h6 class="border-bottom pb-2 mb-3">Recent Reviews</h6>
+                                {% if recent_reviews %}
+                                    {% for review in recent_reviews %}
+                                        <div class="d-flex mb-3 align-items-start">
+                                            <div class="badge bg-success me-2 mt-1">{{ "%.1f"|format(review.overall_rating) }}</div>
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <small class="text-muted">{{ review.timestamp.strftime('%d %b, %Y') }}</small>
+                                                </div>
+                                                {% if review.additional_feedback %}
+                                                    <p class="mb-0 text-truncate" style="max-width: 400px;">{{ review.additional_feedback }}</p>
+                                                {% else %}
+                                                    <p class="mb-0 text-muted fst-italic">No additional comments</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted">No recent reviews available</p>
+                                {% endif %}
+                                
+                                {% if reviews|length > 3 %}
+                                    <div class="text-center mt-3">
+                                        <a href="{{ url_for('helper_reviews', helper_id=helper.helper_id) }}" class="btn btn-sm btn-outline-success">
+                                            See All {{ reviews|length }} Reviews
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                            <h5>No Reviews Yet</h5>
+                            <p class="text-muted">This helper hasn't received any reviews yet.</p>
+                            
+                            <a href="{{ url_for('owner_dashboard') }}" class="btn btn-success">
+                                <i class="fas fa-star me-1"></i> Go to Dashboard
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Reviews Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">All Reviews</h5>
+                </div>
+                <div class="card-body">
+                    {% if reviews %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Review Date</th>
+                                        <th>Rating</th>
+                                        <th>Submitted By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for review in reviews %}
+                                        <tr>
+                                            <td>{{ review.review_date.strftime('%d %b, %Y') }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="me-2">{{ "%.1f"|format(review.overall_rating) }}</span>
+                                                    <i class="fas fa-star text-warning"></i>
+                                                </div>
+                                            </td>
+                                            <td>{{ review.owner.name }}</td>
+                                            <td>
+                                                <a href="{{ url_for('helper_reviews', helper_id=helper.helper_id) }}#review-{{ review.id }}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye me-1"></i> View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                            <h5>No Reviews Yet</h5>
+                            <p class="text-muted">This helper hasn't received any reviews yet.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>

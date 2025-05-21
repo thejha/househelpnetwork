@@ -7,13 +7,14 @@ from flask import render_template, url_for, flash, redirect, request, jsonify, s
 from flask_login import login_user, current_user, logout_user, login_required
 from werkzeug.utils import secure_filename
 from extensions import db, bcrypt
-from models import User, OwnerProfile, OwnerDocument, HelperProfile, HelperDocument, TaskList, Contract, Review, IncidentReport, OwnerToOwnerConnect, PincodeMapping, Language, OwnerHelperAssociation, HelperVerificationLog, AadhaarAPILog
+from models import User, OwnerProfile, OwnerDocument, HelperProfile, HelperDocument, TaskList, Contract, Review, IncidentReport, OwnerToOwnerConnect, PincodeMapping, Language, OwnerHelperAssociation, HelperVerificationLog, AadhaarAPILog, ReviewTaskRating
 from forms import (RegistrationForm, LoginForm, OwnerProfileForm, HelperProfileForm, ContractForm, ReviewForm, 
                    IncidentReportForm, OwnerToOwnerConnectForm, SearchForm, TaskListForm,
                    AadhaarVerificationForm, AadhaarOTPVerificationForm, AadhaarOTPForm, AadhaarRegistrationForm,
                    HelperAadhaarVerificationForm, CreateHelperForm, SearchHelperForm)
 from utils import save_file, get_unique_id, send_notification
 from aadhaar_api import generate_aadhaar_otp, verify_aadhaar_otp
+from sqlalchemy import desc, func
 
 def admin_required(f):
     """Decorator to require admin role."""
@@ -699,13 +700,28 @@ def register_routes(app):
         # Get current date for age calculation
         now = datetime.datetime.now()
         
+        # Explicitly query for reviews to avoid relationship loading issues
+        reviews = Review.query.filter_by(helper_profile_id=helper.id).order_by(Review.timestamp.desc()).all()
+        
+        # Calculate average rating
+        avg_rating = 0
+        if reviews:
+            total_rating = sum(review.overall_rating for review in reviews)
+            avg_rating = total_rating / len(reviews)
+        
+        # Prepare recent reviews (take up to 3)
+        recent_reviews = reviews[:3] if reviews else []
+        
         return render_template('helper_detail.html', 
                               helper=helper, 
                               verification_logs=verification_logs,
                               is_primary_owner=is_primary_owner,
                               owners=owners,
-                              now=now)
-                              
+                              now=now,
+                              reviews=reviews,
+                              recent_reviews=recent_reviews,
+                              avg_rating=avg_rating)
+    
     @app.route('/contracts/create/<helper_id>', methods=['GET', 'POST'])
     @login_required
     def create_contract(helper_id):
@@ -874,28 +890,110 @@ def register_routes(app):
     @admin_required
     def admin_dashboard():
         # Get statistics for the admin dashboard
+        total_users = User.query.count()
         total_helpers = HelperProfile.query.count()
-        total_owners = User.query.filter_by(role='owner').count()
-        pending_verifications = OwnerProfile.query.filter_by(verification_status='Pending').count()
-        aadhaar_verified_users = OwnerProfile.query.filter_by(aadhaar_verified=True).count()
-        manual_verified_users = OwnerProfile.query.filter(
-            OwnerProfile.verification_status == 'Verified',
-            OwnerProfile.aadhaar_verified == False
-        ).count()
+        total_contracts = Contract.query.count()
+        total_reviews = Review.query.count()
         
+        # Get recent activities
+        recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
         recent_helpers = HelperProfile.query.order_by(HelperProfile.created_at.desc()).limit(5).all()
+        recent_contracts = Contract.query.order_by(Contract.created_at.desc()).limit(5).all()
         recent_reviews = Review.query.order_by(Review.timestamp.desc()).limit(5).all()
-        recent_incidents = IncidentReport.query.order_by(IncidentReport.timestamp.desc()).limit(5).all()
         
         return render_template('admin/dashboard.html',
+                              total_users=total_users,
                               total_helpers=total_helpers,
-                              total_owners=total_owners,
-                              pending_verifications=pending_verifications,
-                              aadhaar_verified_users=aadhaar_verified_users,
-                              manual_verified_users=manual_verified_users,
+                              total_contracts=total_contracts,
+                              total_reviews=total_reviews,
+                              recent_users=recent_users,
                               recent_helpers=recent_helpers,
-                              recent_reviews=recent_reviews,
-                              recent_incidents=recent_incidents)
+                              recent_contracts=recent_contracts,
+                              recent_reviews=recent_reviews)
+    
+    @app.route('/admin/analytics')
+    @login_required
+    @admin_required
+    def admin_analytics():
+        """View analytics dashboard for helpers performance"""
+        # Check if analytics images exist
+        import os
+        analytics_dir = os.path.join(app.static_folder, 'analytics')
+        os.makedirs(analytics_dir, exist_ok=True)
+        
+        distribution_img = 'analytics/helper_type_distribution.png'
+        city_img = 'analytics/helper_city_distribution.png'
+        ratings_img = 'analytics/ratings_by_helper_type.png'
+        
+        # Get top helpers by overall rating
+        top_helpers = db.session.query(
+            HelperProfile,
+            func.avg(Review.overall_rating).label('avg_rating'),
+            func.count(Review.id).label('review_count')
+        ).join(Review, HelperProfile.id == Review.helper_profile_id)\
+         .group_by(HelperProfile.id)\
+         .having(func.count(Review.id) > 0)\
+         .order_by(desc('avg_rating'))\
+         .limit(10).all()
+        
+        # Get top helpers by city
+        top_helpers_by_city = {}
+        cities = db.session.query(HelperProfile.city).filter(HelperProfile.city != None).distinct().all()
+        
+        for city_result in cities:
+            city = city_result[0]
+            if not city:
+                continue
+                
+            city_top = db.session.query(
+                HelperProfile,
+                func.avg(Review.overall_rating).label('avg_rating'),
+                func.count(Review.id).label('review_count')
+            ).join(Review, HelperProfile.id == Review.helper_profile_id)\
+             .filter(HelperProfile.city == city)\
+             .group_by(HelperProfile.id)\
+             .having(func.count(Review.id) > 0)\
+             .order_by(desc('avg_rating'))\
+             .limit(3).all()
+             
+            if city_top:
+                top_helpers_by_city[city] = city_top
+        
+        # Get top cleaning helpers
+        top_cleaning = db.session.query(
+            HelperProfile,
+            func.avg(Review.hygiene).label('avg_hygiene'),
+            func.avg(Review.overall_rating).label('avg_rating'),
+            func.count(Review.id).label('review_count')
+        ).join(Review, HelperProfile.id == Review.helper_profile_id)\
+         .filter(HelperProfile.helper_type == 'maid')\
+         .group_by(HelperProfile.id)\
+         .having(func.count(Review.id) > 0)\
+         .order_by(desc('avg_hygiene'))\
+         .limit(5).all()
+        
+        return render_template('admin/analytics.html',
+                              top_helpers=top_helpers,
+                              top_helpers_by_city=top_helpers_by_city,
+                              top_cleaning=top_cleaning,
+                              distribution_img=distribution_img,
+                              city_img=city_img,
+                              ratings_img=ratings_img)
+                              
+    @app.route('/admin/run-analytics')
+    @login_required
+    @admin_required
+    def run_analytics():
+        """Run the analytics script to update visualizations and data"""
+        try:
+            from generate_analytics import generate_helper_analytics
+            generate_helper_analytics()
+            flash('Analytics data and visualizations have been updated successfully.', 'success')
+        except Exception as e:
+            app.logger.error(f"Error running analytics: {str(e)}")
+            flash(f'An error occurred while generating analytics: {str(e)}', 'danger')
+            
+        return redirect(url_for('admin_analytics'))
     
     @app.route('/admin/tasks', methods=['GET', 'POST'])
     @login_required
@@ -1554,3 +1652,166 @@ def register_routes(app):
             user=user,
             related_logs=related_logs
         )
+
+    @app.route('/contracts/<contract_id>/review', methods=['GET', 'POST'])
+    @login_required
+    def submit_review(contract_id):
+        """Submit a review for a contract"""
+        # Get the contract and verify ownership
+        contract = Contract.query.filter_by(contract_id=contract_id).first_or_404()
+        
+        # Check if the current user is the owner of this contract
+        if contract.owner_id != current_user.id:
+            flash('You can only review contracts that you created.', 'danger')
+            return redirect(url_for('owner_dashboard'))
+        
+        # Check if contract is active
+        if contract.is_terminated:
+            flash('You cannot review a terminated contract.', 'warning')
+            return redirect(url_for('contract_detail', contract_id=contract_id))
+        
+        # Get the helper profile
+        helper = HelperProfile.query.get(contract.helper_profile_id)
+        
+        # Check if the user has already submitted 4 reviews this month for this contract
+        current_month = datetime.date.today().replace(day=1)
+        next_month = (current_month.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+        
+        reviews_this_month = Review.query.filter(
+            Review.owner_id == current_user.id,
+            Review.contract_id == contract.id,
+            Review.review_date >= current_month,
+            Review.review_date < next_month
+        ).count()
+        
+        if reviews_this_month >= 4:
+            flash('You have already submitted the maximum of 4 reviews for this helper this month.', 'warning')
+            return redirect(url_for('contract_detail', contract_id=contract_id))
+            
+        # Check if a review has already been submitted today for this helper
+        today = datetime.date.today()
+        existing_review_today = Review.query.filter(
+            Review.owner_id == current_user.id,
+            Review.helper_profile_id == helper.id,
+            Review.review_date == today
+        ).first()
+        
+        if existing_review_today:
+            flash('You have already provided feedback for this helper today. Please submit your next review tomorrow to share updated feedback.', 'info')
+            return redirect(url_for('contract_detail', contract_id=contract_id))
+        
+        # Get tasks for this contract
+        task_ids = contract.tasks.split(',') if contract.tasks else []
+        tasks = TaskList.query.filter(TaskList.id.in_(task_ids)).all() if task_ids else []
+        
+        # Create form
+        form = ReviewForm()
+        form.helper_id.data = helper.helper_id
+        form.contract_id.data = contract.contract_id
+        
+        # Process form submission
+        if form.validate_on_submit():
+            try:
+                # Generate unique review ID
+                review_id = f"REV-{datetime.datetime.now().strftime('%Y%m%d')}-{helper.helper_id[-4:]}-{current_user.id}"
+                
+                # Create review
+                review = Review(
+                    review_id=review_id,
+                    helper_profile_id=helper.id,
+                    owner_id=current_user.id,
+                    contract_id=contract.id,
+                    punctuality=float(form.punctuality.data),
+                    attitude=float(form.attitude.data),
+                    hygiene=float(form.hygiene.data),
+                    reliability=float(form.reliability.data),
+                    communication=float(form.communication.data),  # Use the value from the form
+                    tasks_average=3.0,  # Default value, will be updated after we process task ratings
+                    additional_feedback=form.additional_feedback.data,
+                    comments=form.additional_feedback.data,  # Duplicate to maintain compatibility
+                    review_date=datetime.date.today()
+                )
+                
+                db.session.add(review)
+                db.session.flush()  # To get the review ID for task ratings
+                
+                # Add task ratings and calculate tasks_average
+                task_ratings = []
+                task_rating_sum = 0
+                
+                for task in tasks:
+                    # Get the rating from the form
+                    task_field_name = f'task_{task.id}'
+                    if task_field_name in request.form:
+                        rating = int(request.form[task_field_name])
+                        task_rating_sum += rating
+                        
+                        # Create task rating
+                        task_rating = ReviewTaskRating(
+                            review_id=review.id,
+                            task_id=task.id,
+                            rating=rating
+                        )
+                        db.session.add(task_rating)
+                        task_ratings.append(task_rating)
+                
+                # Update tasks_average if we have task ratings
+                if task_ratings:
+                    review.tasks_average = task_rating_sum / len(task_ratings)
+                
+                db.session.commit()
+                flash('Review submitted successfully!', 'success')
+                return redirect(url_for('contract_detail', contract_id=contract_id))
+                
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Error submitting review: {str(e)}")
+                flash(f'An error occurred while submitting the review: {str(e)}', 'danger')
+        
+        return render_template('review.html', 
+                              form=form, 
+                              helper=helper, 
+                              contract=contract,
+                              tasks=tasks)
+    
+    @app.route('/helper/<helper_id>/reviews')
+    @login_required
+    def helper_reviews(helper_id):
+        """View all reviews for a helper"""
+        helper = HelperProfile.query.filter_by(helper_id=helper_id).first_or_404()
+        
+        # Check if the current user is associated with this helper
+        association = OwnerHelperAssociation.query.filter_by(
+            helper_profile_id=helper.id,
+            owner_id=current_user.id
+        ).first()
+        
+        if not association and current_user.role != 'admin':
+            flash('You can only view reviews for helpers that are associated with your account.', 'danger')
+            return redirect(url_for('owner_dashboard'))
+        
+        # Get all reviews for this helper
+        reviews = Review.query.filter_by(helper_profile_id=helper.id).order_by(Review.timestamp.desc()).all()
+        
+        # Calculate average ratings
+        avg_ratings = {
+            'punctuality': 0,
+            'attitude': 0,
+            'hygiene': 0,
+            'reliability': 0,
+            'communication': 0,
+            'overall': 0
+        }
+        
+        if reviews:
+            avg_ratings['punctuality'] = sum(r.punctuality for r in reviews) / len(reviews)
+            avg_ratings['attitude'] = sum(r.attitude for r in reviews) / len(reviews)
+            avg_ratings['hygiene'] = sum(r.hygiene for r in reviews) / len(reviews)
+            avg_ratings['reliability'] = sum(r.reliability for r in reviews) / len(reviews)
+            avg_ratings['communication'] = sum(r.communication for r in reviews) / len(reviews)
+            avg_ratings['overall'] = sum(r.overall_rating for r in reviews) / len(reviews)
+        
+        return render_template('helper_reviews.html', 
+                              helper=helper, 
+                              reviews=reviews,
+                              avg_ratings=avg_ratings)

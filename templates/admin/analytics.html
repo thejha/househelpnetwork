@@ -1,0 +1,210 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Helper Analytics - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Helper Analytics</h1>
+    
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Helper Performance Analytics</h6>
+                    <button class="btn btn-sm btn-primary" onclick="window.location.href='/admin/run-analytics'">
+                        <i class="fas fa-sync-alt mr-1"></i> Refresh Analytics
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p>This dashboard provides insights into helper performance across different metrics and locations.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Data Visualizations -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Helper Distribution by Type</h6>
+                </div>
+                <div class="card-body">
+                    <img src="{{ url_for('static', filename=distribution_img) }}" class="img-fluid" alt="Helper Distribution by Type">
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Helper Distribution by City</h6>
+                </div>
+                <div class="card-body">
+                    <img src="{{ url_for('static', filename=city_img) }}" class="img-fluid" alt="Helper Distribution by City">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Average Ratings by Helper Type</h6>
+                </div>
+                <div class="card-body">
+                    <img src="{{ url_for('static', filename=ratings_img) }}" class="img-fluid" alt="Ratings by Helper Type">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Helpers Section -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top 10 Helpers (Overall Rating)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Helper Type</th>
+                                    <th>Location</th>
+                                    <th>Overall Rating</th>
+                                    <th>Reviews</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for helper, avg_rating, review_count in top_helpers %}
+                                <tr>
+                                    <td>{{ helper.name }}</td>
+                                    <td>{{ helper.helper_type|title }}</td>
+                                    <td>{{ helper.city }}, {{ helper.state }}</td>
+                                    <td>{{ "%.2f"|format(avg_rating) }}/5</td>
+                                    <td>{{ review_count }}</td>
+                                    <td>
+                                        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Cleaning Helpers -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Cleaning Helpers (Hygiene Rating)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Location</th>
+                                    <th>Hygiene Rating</th>
+                                    <th>Overall Rating</th>
+                                    <th>Reviews</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for helper, avg_hygiene, avg_rating, review_count in top_cleaning %}
+                                <tr>
+                                    <td>{{ helper.name }}</td>
+                                    <td>{{ helper.city }}, {{ helper.state }}</td>
+                                    <td>{{ "%.2f"|format(avg_hygiene) }}/5</td>
+                                    <td>{{ "%.2f"|format(avg_rating) }}/5</td>
+                                    <td>{{ review_count }}</td>
+                                    <td>
+                                        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Helpers By City -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Helpers By City</h6>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="cityAccordion">
+                        {% for city, helpers in top_helpers_by_city.items() %}
+                        <div class="card">
+                            <div class="card-header" id="heading{{ loop.index }}">
+                                <h2 class="mb-0">
+                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" 
+                                            data-target="#collapse{{ loop.index }}" aria-expanded="{{ 'true' if loop.index == 1 else 'false' }}" 
+                                            aria-controls="collapse{{ loop.index }}">
+                                        {{ city }} ({{ helpers|length }} top helpers)
+                                    </button>
+                                </h2>
+                            </div>
+                            <div id="collapse{{ loop.index }}" class="collapse {{ 'show' if loop.index == 1 else '' }}" 
+                                 aria-labelledby="heading{{ loop.index }}" data-parent="#cityAccordion">
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered" width="100%" cellspacing="0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Helper Type</th>
+                                                    <th>Overall Rating</th>
+                                                    <th>Reviews</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for helper, avg_rating, review_count in helpers %}
+                                                <tr>
+                                                    <td>{{ helper.name }}</td>
+                                                    <td>{{ helper.helper_type|title }}</td>
+                                                    <td>{{ "%.2f"|format(avg_rating) }}/5</td>
+                                                    <td>{{ review_count }}</td>
+                                                    <td>
+                                                        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-sm btn-primary">
+                                                            <i class="fas fa-eye"></i> View
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

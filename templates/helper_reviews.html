@@ -1,0 +1,189 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ helper.name }}'s Reviews - HouseHelpNetwork{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Helper Profile
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">{{ helper.name }}'s Reviews</h3>
+                    <span class="badge bg-primary">{{ reviews|length }} Reviews</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center">
+                            {% if helper.photo_url %}
+                                <img src="{{ helper.photo_url }}" alt="Helper Photo" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; background-color: var(--secondary-lavender);">
+                                    <i class="fas fa-user text-primary-purple fa-2x"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h5 class="mb-1">{{ helper.name }}</h5>
+                                <p class="mb-0 text-muted">{{ helper.helper_type|title }} | {{ helper.helper_id }}</p>
+                                <p class="mb-0 text-muted"><small>{{ helper.city }}, {{ helper.state }}</small></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if reviews %}
+                    <div class="mb-4">
+                        {% for review in reviews %}
+                        <div id="review-{{ review.id }}" class="card mb-3">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">Review #{{ review.review_id }}</h6>
+                                    <small class="text-muted">{{ review.review_date.strftime('%d %b, %Y') }}</small>
+                                </div>
+                                <div class="badge bg-primary">
+                                    Overall: {{ "%.1f"|format(review.overall_rating) }}/5
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <h6>Core Values</h6>
+                                        <ul class="list-group list-group-flush">
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Punctuality
+                                                <span class="badge bg-primary">{{ review.punctuality }}/5</span>
+                                            </li>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Attitude
+                                                <span class="badge bg-primary">{{ review.attitude }}/5</span>
+                                            </li>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Hygiene
+                                                <span class="badge bg-primary">{{ review.hygiene }}/5</span>
+                                            </li>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Reliability
+                                                <span class="badge bg-primary">{{ review.reliability }}/5</span>
+                                            </li>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Communication
+                                                <span class="badge bg-primary">{{ review.communication }}/5</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Task Ratings</h6>
+                                        {% if review.task_ratings %}
+                                        <ul class="list-group list-group-flush">
+                                            {% for task_rating in review.task_ratings %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                {{ task_rating.task.name }}
+                                                <span class="badge bg-primary">{{ task_rating.rating }}/5</span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% else %}
+                                        <p class="text-muted">No task ratings available</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if review.additional_feedback %}
+                                <div>
+                                    <h6>Additional Feedback</h6>
+                                    <p>{{ review.additional_feedback }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-star fa-4x text-muted mb-3"></i>
+                        <h5>No Reviews Yet</h5>
+                        <p class="text-muted">This helper hasn't received any reviews yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Overall Rating</h5>
+                </div>
+                <div class="card-body">
+                    {% if reviews %}
+                    <div class="text-center mb-4">
+                        <div class="display-4 text-primary fw-bold">{{ "%.1f"|format(avg_ratings.overall) }}/5</div>
+                        <p class="text-muted">Based on {{ reviews|length }} review{% if reviews|length != 1 %}s{% endif %}</p>
+                        <div class="badge bg-secondary mb-2">{{ helper.helper_type|title }} | {{ helper.city or 'N/A' }}</div>
+                    </div>
+                    
+                    <h6>Rating Breakdown</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Punctuality</span>
+                                <span class="badge bg-primary">{{ "%.1f"|format(avg_ratings.punctuality) }}/5</span>
+                            </div>
+                            <div class="progress mt-2" style="height: 5px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ (avg_ratings.punctuality/5)*100 }}%"></div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Attitude</span>
+                                <span class="badge bg-primary">{{ "%.1f"|format(avg_ratings.attitude) }}/5</span>
+                            </div>
+                            <div class="progress mt-2" style="height: 5px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ (avg_ratings.attitude/5)*100 }}%"></div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Hygiene</span>
+                                <span class="badge bg-primary">{{ "%.1f"|format(avg_ratings.hygiene) }}/5</span>
+                            </div>
+                            <div class="progress mt-2" style="height: 5px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ (avg_ratings.hygiene/5)*100 }}%"></div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Reliability</span>
+                                <span class="badge bg-primary">{{ "%.1f"|format(avg_ratings.reliability) }}/5</span>
+                            </div>
+                            <div class="progress mt-2" style="height: 5px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ (avg_ratings.reliability/5)*100 }}%"></div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Communication</span>
+                                <span class="badge bg-primary">{{ "%.1f"|format(avg_ratings.communication|default(0)) }}/5</span>
+                            </div>
+                            <div class="progress mt-2" style="height: 5px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ (avg_ratings.communication|default(0)/5)*100 }}%"></div>
+                            </div>
+                        </li>
+                    </ul>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                        <h5>No Ratings Yet</h5>
+                        <p class="text-muted">This helper hasn't been rated yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

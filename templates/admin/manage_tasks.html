@@ -87,6 +87,7 @@
                                             <td>{{ task.name }}</td>
                                             <td>
                                                 <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}" onsubmit="return confirmDelete('task', '{{ task.name }}')">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <button type="submit" class="btn btn-sm btn-danger">
                                                         <i class="fas fa-trash"></i>
                                                     </button>

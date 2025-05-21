@@ -84,7 +84,7 @@ class OwnerProfileForm(FlaskForm):
 
 class HelperProfileForm(FlaskForm):
     name = StringField('Helper Name', validators=[DataRequired(), Length(min=2, max=100)])
-    helper_type = SelectField('Helper Type', choices=[('maid', 'Maid'), ('driver', 'Driver')], validators=[DataRequired()])
+    helper_type = SelectField('Helper Type', choices=[('maid', 'Maid')], validators=[DataRequired()])
     
     # Maid specific fields (shown conditionally)
     aadhar_id = StringField('Aadhar ID', validators=[])
@@ -110,7 +110,7 @@ class HelperAadhaarVerificationForm(FlaskForm):
 class CreateHelperForm(FlaskForm):
     name = StringField('Helper Name', validators=[DataRequired(), Length(min=2, max=100)])
     helper_id = StringField('Aadhaar/ID Number', validators=[DataRequired(), Length(min=2, max=50)])
-    helper_type = SelectField('Helper Type', choices=[('maid', 'Maid'), ('driver', 'Driver')], validators=[DataRequired()])
+    helper_type = SelectField('Helper Type', choices=[('maid', 'Maid')], validators=[DataRequired()])
     phone_number = StringField('Phone Number', validators=[DataRequired(), Length(min=10, max=15)])
     gender = SelectField('Gender', choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')], validators=[DataRequired()])
     languages = SelectMultipleField('Languages', coerce=str, validators=[])
@@ -157,13 +157,34 @@ class ContractForm(FlaskForm):
 
 class ReviewForm(FlaskForm):
     helper_id = HiddenField('Helper ID')
-    tasks_average = SelectField('Overall Task Performance', choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], validators=[DataRequired()])
-    punctuality = SelectField('Punctuality', choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], validators=[DataRequired()])
-    attitude = SelectField('Attitude', choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], validators=[DataRequired()])
-    hygiene = SelectField('Hygiene', choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], validators=[DataRequired()])
-    communication = SelectField('Communication', choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], validators=[DataRequired()])
-    reliability = SelectField('Reliability', choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], validators=[DataRequired()])
-    comments = TextAreaField('Comments', validators=[DataRequired()])
+    contract_id = HiddenField('Contract ID')
+    
+    # Core values - these are always the same
+    punctuality = SelectField('Punctuality', 
+                             choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], 
+                             coerce=int,
+                             validators=[DataRequired()])
+    attitude = SelectField('Attitude', 
+                          choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], 
+                          coerce=int,
+                          validators=[DataRequired()])
+    hygiene = SelectField('Hygiene', 
+                         choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], 
+                         coerce=int,
+                         validators=[DataRequired()])
+    reliability = SelectField('Reliability', 
+                            choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], 
+                            coerce=int,
+                            validators=[DataRequired()])
+    communication = SelectField('Communication', 
+                            choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], 
+                            coerce=int,
+                            default=3,
+                            validators=[DataRequired()])
+    
+    # The task ratings will be dynamically added based on the contract tasks
+    
+    additional_feedback = TextAreaField('Additional Feedback')
     submit = SubmitField('Submit Review')
 
 class IncidentReportForm(FlaskForm):

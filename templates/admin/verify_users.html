@@ -104,6 +104,7 @@
 
                     <div class="d-flex justify-content-end mt-4">
                         <form method="POST" action="{{ url_for('update_verification', profile_id=item.profile.id, status='Rejected') }}" class="me-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-danger">
                                 <i class="fas fa-times me-2"></i>Reject
                             </button>

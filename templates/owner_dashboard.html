@@ -64,6 +64,8 @@
                         <thead>
                             <tr>
                                 <th>Helper Name</th>
+                                <th>Helper Type</th>
+                                <th>Location</th>
                                 <th>Contract ID</th>
                                 <th>Start Date</th>
                                 <th>End Date</th>
@@ -80,6 +82,8 @@
                                             {{ contract.helper_profile.name }}
                                         </a>
                                     </td>
+                                    <td>{{ contract.helper_profile.helper_type|title }}</td>
+                                    <td>{{ contract.helper_profile.city or 'N/A' }}</td>
                                     <td>{{ contract.contract_id }}</td>
                                     <td>{{ contract.start_date.strftime('%d %b, %Y') }}</td>
                                     <td>
@@ -106,6 +110,11 @@
                                         <a href="{{ url_for('contract_detail', contract_id=contract.contract_id) }}" class="btn btn-sm btn-primary" title="View Contract">
                                             <i class="fas fa-file-contract"></i>
                                         </a>
+                                        {% if not contract.is_terminated %}
+                                        <a href="{{ url_for('submit_review', contract_id=contract.contract_id) }}" class="btn btn-sm btn-success" title="Submit Review">
+                                            <i class="fas fa-star"></i>
+                                        </a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}

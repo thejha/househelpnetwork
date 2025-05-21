@@ -230,17 +230,71 @@ class Review(db.Model):
     review_id = db.Column(db.String(50), unique=True, nullable=False)
     helper_profile_id = db.Column(db.Integer, db.ForeignKey('helper_profiles.id'), nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    tasks_average = db.Column(db.Float, nullable=False)
-    punctuality = db.Column(db.Float, nullable=False)
-    attitude = db.Column(db.Float, nullable=False)
-    hygiene = db.Column(db.Float, nullable=False)
-    communication = db.Column(db.Float, nullable=False)
-    reliability = db.Column(db.Float, nullable=False)
-    comments = db.Column(db.Text, nullable=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contracts.id'), nullable=False)
+    punctuality = db.Column(db.Float, nullable=False)  # Changed to Float to match DB
+    attitude = db.Column(db.Float, nullable=False)  # Changed to Float to match DB
+    hygiene = db.Column(db.Float, nullable=False)  # Changed to Float to match DB
+    reliability = db.Column(db.Float, nullable=False)  # Changed to Float to match DB
+    communication = db.Column(db.Float, nullable=False, default=3.0)  # Updated to not nullable with default
+    tasks_average = db.Column(db.Float, nullable=False, default=3.0)
+    additional_feedback = db.Column(db.Text, nullable=True)
+    comments = db.Column(db.Text, nullable=True)  # Added to match DB
+    review_date = db.Column(db.Date, nullable=False, default=datetime.date.today)
     timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    
+    # Relationships
+    task_ratings = db.relationship('ReviewTaskRating', backref='review', lazy=True, cascade="all, delete-orphan")
+    
+    @property
+    def overall_rating(self):
+        """Calculate the overall rating across all rated areas"""
+        # Count the total number of parameters
+        parameter_count = 5  # Core values (punctuality, attitude, hygiene, reliability, communication)
+        
+        # Add task ratings if available
+        task_count = len(self.task_ratings) if self.task_ratings else 0
+        total_parameter_count = parameter_count + task_count
+        
+        # Sum up all points
+        core_points = self.punctuality + self.attitude + self.hygiene + self.reliability + self.communication
+        task_points = sum(rating.rating for rating in self.task_ratings) if self.task_ratings else 0
+        total_points = core_points + task_points
+        
+        # Calculate overall rating: (Total points / (Total parameters × 5)) × 5
+        if total_parameter_count > 0:
+            max_possible_points = total_parameter_count * 5
+            return (total_points / max_possible_points) * 5
+        else:
+            return 0  # Avoid division by zero
     
     def __repr__(self):
         return f'<Review {self.review_id}>'
+
+class ReviewTaskRating(db.Model):
+    """Rating for individual tasks within a review"""
+    __tablename__ = 'review_task_ratings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    review_id = db.Column(db.Integer, db.ForeignKey('reviews.id'), nullable=False)
+    task_id = db.Column(db.Integer, db.ForeignKey('task_list.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)  # Rating from 1-5
+    
+    # Relationship to task
+    task = db.relationship('TaskList')
+    
+    def __repr__(self):
+        return f'<ReviewTaskRating review_id={self.review_id}, task_id={self.task_id}, rating={self.rating}>'
+
+class CoreValue(db.Model):
+    """Core values for reviewing helpers"""
+    __tablename__ = 'core_competencies'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+    description = db.Column(db.String(200), nullable=True)
+    
+    def __repr__(self):
+        return f'<CoreValue {self.name}>'
 
 class IncidentReport(db.Model):
     __tablename__ = 'incident_reports'

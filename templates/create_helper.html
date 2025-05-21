@@ -28,7 +28,7 @@
                     <div class="mt-4">
                         <h5>Documents to Keep Ready:</h5>
                         <ul>
-                            <li>Government ID (Aadhar/Driving License)</li>
+                            <li>Aadhaar Card</li>
                             <li>Recent photograph</li>
                         </ul>
                     </div>
@@ -74,17 +74,11 @@
                             {% endif %}
                         </div>
                         
-                        <!-- Conditional fields based on helper type -->
-                        <div class="mb-3 maid-field">
+                        <!-- Aadhaar field -->
+                        <div class="mb-3">
                             {{ form.aadhar_id.label(class="form-label") }}
                             {{ form.aadhar_id(class="form-control", id="aadhar_id", placeholder="Enter 12-digit Aadhaar number") }}
                             <div class="form-text">Enter the helper's Aadhaar number (12 digits)</div>
-                        </div>
-                        
-                        <div class="mb-3 driver-field d-none">
-                            {{ form.driving_license_id.label(class="form-label") }}
-                            {{ form.driving_license_id(class="form-control", id="driving_license_id", placeholder="Enter driving license ID") }}
-                            <div class="form-text">Enter the helper's driving license ID</div>
                         </div>
                         
                         <div class="mb-3">
@@ -159,75 +153,22 @@
         console.log('DOM Loaded - Initializing form handling');
         
         // Get references to form elements
-        const helperTypeSelect = document.getElementById('helper_type');
-        const maidFields = document.querySelectorAll('.maid-field');
-        const driverFields = document.querySelectorAll('.driver-field');
         const form = document.getElementById('helperForm');
         const submitBtn = document.getElementById('submitBtn');
         const aadharField = document.getElementById('aadhar_id');
-        const drivingLicenseField = document.getElementById('driving_license_id');
         const helperIdField = document.getElementById('helper_id');
         
         // Verify all elements exist
         if (!form) console.error('Form not found');
         if (!submitBtn) console.error('Submit button not found');
-        if (!helperTypeSelect) console.error('Helper type select not found');
         if (!aadharField) console.error('Aadhar field not found');
-        if (!drivingLicenseField) console.error('Driving license field not found');
         if (!helperIdField) console.error('Helper ID field not found');
         
-        function toggleFields() {
-            if (!helperTypeSelect) return;
-            
-            const helperType = helperTypeSelect.value;
-            console.log('Toggling fields for helper type:', helperType);
-            
-            if (helperType === 'maid') {
-                maidFields.forEach(field => field.classList.remove('d-none'));
-                driverFields.forEach(field => field.classList.add('d-none'));
-            } else {
-                maidFields.forEach(field => field.classList.add('d-none'));
-                driverFields.forEach(field => field.classList.remove('d-none'));
-            }
-        }
-        
-        // Initial toggle
-        toggleFields();
-        
-        // Toggle when selection changes
-        if (helperTypeSelect) {
-            helperTypeSelect.addEventListener('change', toggleFields);
-        }
-        
-        // Auto-populate helper_id based on selected ID
+        // Auto-populate helper_id based on Aadhaar ID
         if (aadharField && helperIdField) {
             aadharField.addEventListener('input', function() {
-                if (helperTypeSelect && helperTypeSelect.value === 'maid') {
-                    console.log('Updating helper_id with aadhar value:', this.value);
-                    helperIdField.value = this.value;
-                }
-            });
-        }
-        
-        if (drivingLicenseField && helperIdField) {
-            drivingLicenseField.addEventListener('input', function() {
-                if (helperTypeSelect && helperTypeSelect.value === 'driver') {
-                    console.log('Updating helper_id with driving license value:', this.value);
-                    helperIdField.value = this.value;
-                }
-            });
-        }
-        
-        // Change listener for helper type to update which ID is copied
-        if (helperTypeSelect && helperIdField) {
-            helperTypeSelect.addEventListener('change', function() {
-                if (this.value === 'maid' && aadharField) {
-                    console.log('Helper type changed to maid, updating helper_id');
-                    helperIdField.value = aadharField.value;
-                } else if (this.value === 'driver' && drivingLicenseField) {
-                    console.log('Helper type changed to driver, updating helper_id');
-                    helperIdField.value = drivingLicenseField.value;
-                }
+                console.log('Updating helper_id with aadhar value:', this.value);
+                helperIdField.value = this.value;
             });
         }
 
@@ -237,12 +178,8 @@
                 console.log('Submit button clicked');
                 
                 // Update helper_id one last time before submission
-                if (helperTypeSelect && helperIdField) {
-                    if (helperTypeSelect.value === 'maid' && aadharField) {
-                        helperIdField.value = aadharField.value;
-                    } else if (helperTypeSelect.value === 'driver' && drivingLicenseField) {
-                        helperIdField.value = drivingLicenseField.value;
-                    }
+                if (helperIdField && aadharField) {
+                    helperIdField.value = aadharField.value;
                 }
                 
                 console.log('Final helper_id value:', helperIdField ? helperIdField.value : 'field not found');

@@ -92,9 +92,17 @@
                     </div>
                     
                     <div class="d-flex justify-content-between mt-4">
-                        <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-outline-primary">
-                            <i class="fas fa-user me-1"></i> View Helper Profile
-                        </a>
+                        <div>
+                            <a href="{{ url_for('helper_detail', helper_id=helper.helper_id) }}" class="btn btn-outline-primary">
+                                <i class="fas fa-user me-1"></i> View Helper Profile
+                            </a>
+                            
+                            {% if not contract.is_terminated %}
+                                <a href="{{ url_for('submit_review', contract_id=contract.contract_id) }}" class="btn btn-success ms-2">
+                                    <i class="fas fa-star me-1"></i> Submit Review
+                                </a>
+                            {% endif %}
+                        </div>
                         
                         {% if contract.is_terminated %}
                             <span class="badge bg-danger py-2 px-3">Contract Terminated</span>

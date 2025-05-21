@@ -56,6 +56,7 @@
                     </div>
                     
                     <form method="POST" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-4">
                             <label for="termination_reason" class="form-label">Reason for Termination</label>
                             <textarea name="termination_reason" id="termination_reason" class="form-control" 
